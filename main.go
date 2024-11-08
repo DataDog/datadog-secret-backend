@@ -78,7 +78,10 @@ func main() {
 	}
 
 	backends := backend.NewBackends(configFile)
-	secretOutputs := backends.GetSecretOutputs(inputPayload.Secrets)
+	secretOutputs, err := backends.GetSecretOutputs(inputPayload.Secrets)
+	if err != nil {
+		log.Fatal().Err(err).Msg("failed to resolve secrets")
+	}
 
 	output, err := json.Marshal(secretOutputs)
 	if err != nil {

@@ -136,11 +136,16 @@ func (b *Backends) InitBackend(backendId string, config map[string]interface{}) 
 	return
 }
 
-func (b *Backends) GetSecretOutputs(secrets []string) map[string]secret.SecretOutput {
+func (b *Backends) GetSecretOutputs(secrets []string) (map[string]secret.SecretOutput, error) {
 	secretOutputs := make(map[string]secret.SecretOutput, 0)
 
 	for _, s := range secrets {
 		segments := strings.SplitN(s, ":", 2)
+		if len(segments) < 2 {
+			return nil,
+				fmt.Errorf("secret '%s' is not in the expected '<backend>:<id>' format", s)
+		}
+
 		backendId := segments[0]
 		secretKey := segments[1]
 
@@ -155,5 +160,5 @@ func (b *Backends) GetSecretOutputs(secrets []string) map[string]secret.SecretOu
 		}
 		secretOutputs[s] = b.Backends[backendId].GetSecretOutput(secretKey)
 	}
-	return secretOutputs
+	return secretOutputs, nil
 }
