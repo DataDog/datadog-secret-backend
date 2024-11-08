@@ -46,8 +46,7 @@ func init() {
 }
 
 func printVersion() {
-	fmt.Fprintf(os.Stdout, "%s: v%s\n",
-		filepath.Base(os.Args[0]), appVersion)
+	fmt.Fprintf(os.Stdout, "%s: v%s\n", filepath.Base(os.Args[0]), appVersion)
 	os.Exit(0)
 }
 
@@ -57,7 +56,7 @@ func main() {
 	defaultConfigFile := filepath.Join(programPath, "datadog-secret-backend.yaml")
 
 	version := flag.Bool("version", false,
-		fmt.Sprintf("Displays version and information of %s", filepath.Base(program)),
+		fmt.Sprintf("Print the version info"),
 	)
 	configFile := flag.String("config", defaultConfigFile, "Path to backend configuration yaml")
 
