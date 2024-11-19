@@ -95,6 +95,14 @@
 
 Reference each supported backend type's documentation on specific usage examples and configuration options.
 
+## Running tests
+
+You can run the tests with the following command:
+
+```bash
+go test ./...
+```
+
 ## License
 
 [BSD-3-Clause License](LICENSE)
