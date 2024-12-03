@@ -42,12 +42,11 @@ func init() {
 
 func main() {
 	program, _ := os.Executable()
-	programPath := filepath.Dir(program)
+	programPath := "/etc/datadog-agent"
 	defaultConfigFile := filepath.Join(programPath, "datadog-secret-backend.yaml")
 
 	version := flag.Bool("version", false, "Print the version info")
 	configFile := flag.String("config", defaultConfigFile, "Path to backend configuration yaml")
-
 	flag.Parse()
 
 	if *version {
@@ -74,4 +73,5 @@ func main() {
 	}
 
 	fmt.Print(string(output))
+	os.Exit(0)
 }
