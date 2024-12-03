@@ -27,6 +27,8 @@ import (
 type Backend interface {
 	// GetSecretOutput returns a the value for a specific secret
 	GetSecretOutput(string) secret.Output
+	// ListSecretKeys returns a list of all secret keys in the backend
+	ListSecretKeys() secret.Keys
 }
 
 // Backends encapsulate all known backends
@@ -172,4 +174,16 @@ func (b *Backends) GetSecretOutputs(secrets []string) map[string]secret.Output {
 		}
 	}
 	return secretOutputs
+}
+
+// ListSecretKeys returns a list of all secret keys in all backends
+func (b *Backends) ListSecretKeys() secret.Keys {
+	keys := make([]string, 0)
+	for backendID, backend := range b.Backends {
+		backendKeys := backend.ListSecretKeys()
+		for _, key := range backendKeys.Keys {
+			keys = append(keys, fmt.Sprintf("%s:%s", backendID, key))
+		}
+	}
+	return secret.Keys{Keys: keys}
 }

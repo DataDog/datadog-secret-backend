@@ -27,3 +27,12 @@ func (b *ErrorBackend) GetSecretOutput(_ string) secret.Output {
 		Error: &es,
 	}
 }
+
+// ListSecretKeys returns a list of all secret keys in the backend
+func (b *ErrorBackend) ListSecretKeys() secret.Keys {
+	es := b.Error.Error()
+	return secret.Keys{
+		Keys:  nil,
+		Error: &es,
+	}
+}

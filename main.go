@@ -47,10 +47,23 @@ func main() {
 
 	version := flag.Bool("version", false, "Print the version info")
 	configFile := flag.String("config", defaultConfigFile, "Path to backend configuration yaml")
+	listKeys := flag.Bool("list", false, "List all secret keys in the backend")
 	flag.Parse()
 
 	if *version {
 		fmt.Fprintf(os.Stdout, "%s v%s\n", filepath.Base(program), appVersion)
+		os.Exit(0)
+	}
+
+	backends := backend.NewBackends(*configFile)
+
+	if listKeys != nil && *listKeys {
+		secretOutputs := backends.ListSecretKeys()
+		output, err := json.Marshal(secretOutputs)
+		if err != nil {
+			log.Fatal().Err(err).Msg("failed to marshal output")
+		}
+		fmt.Print(string(output))
 		os.Exit(0)
 	}
 
@@ -64,7 +77,6 @@ func main() {
 		log.Fatal().Err(err).Msg("failed to unmarshal input")
 	}
 
-	backends := backend.NewBackends(*configFile)
 	secretOutputs := backends.GetSecretOutputs(inputPayload.Secrets)
 
 	output, err := json.Marshal(secretOutputs)

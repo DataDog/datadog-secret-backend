@@ -104,3 +104,14 @@ func (b *SecretsManagerBackend) GetSecretOutput(secretKey string) secret.Output 
 		Msg("backend does not provide secret key")
 	return secret.Output{Value: nil, Error: &es}
 }
+
+// ListSecretKeys returns a list of all secret keys in the backend
+func (b *SecretsManagerBackend) ListSecretKeys() secret.Keys {
+	keys := []string{}
+	for k := range b.Secret {
+		keys = append(keys, k)
+	}
+	return secret.Keys{
+		Keys: keys,
+	}
+}

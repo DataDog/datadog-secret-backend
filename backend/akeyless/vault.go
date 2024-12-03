@@ -72,7 +72,6 @@ func NewAkeylessBackend(backendID string, bc map[string]interface{}) (*Backend, 
 
 // GetSecretOutput returns a the value for a specific secret
 func (b *Backend) GetSecretOutput(secretKey string) secret.Output {
-
 	payload := secretRequest{
 		AccessType:    "access_key",
 		Accessibility: "regular",
@@ -163,4 +162,10 @@ func (b *Backend) GetSecretOutput(secretKey string) secret.Output {
 	}
 
 	return secret.Output{Value: &secretValue, Error: nil}
+}
+
+// ListSecretKeys returns a list of all secret keys in the backend
+func (b *Backend) ListSecretKeys() secret.Keys {
+	// TODO: implement
+	return secret.Keys{}
 }

@@ -81,3 +81,14 @@ func (b *JSONBackend) GetSecretOutput(secretKey string) secret.Output {
 		Msg("backend does not provide secret")
 	return secret.Output{Value: nil, Error: &es}
 }
+
+// ListSecretKeys returns a list of all secret keys in the backend
+func (b *JSONBackend) ListSecretKeys() secret.Keys {
+	keys := []string{}
+	for k := range b.Secret {
+		keys = append(keys, k)
+	}
+	return secret.Keys{
+		Keys: keys,
+	}
+}
