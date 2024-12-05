@@ -134,3 +134,14 @@ func (b *SSMParameterStoreBackend) GetSecretOutput(secretKey string) secret.Outp
 		Msg("failed to retrieve parameters")
 	return secret.Output{Value: nil, Error: &es}
 }
+
+// ListSecretKeys returns a list of all secret keys in the backend
+func (b *SSMParameterStoreBackend) ListSecretKeys() secret.Keys {
+	keys := []string{}
+	for k := range b.Secret {
+		keys = append(keys, k)
+	}
+	return secret.Keys{
+		Keys: keys,
+	}
+}

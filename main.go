@@ -24,7 +24,7 @@ import (
 	"github.com/DataDog/datadog-secret-backend/secret"
 )
 
-const appVersion = "0.1.11"
+const appVersion = "0.1.13"
 
 func init() {
 	zerolog.TimestampFunc = func() time.Time {
@@ -42,16 +42,28 @@ func init() {
 
 func main() {
 	program, _ := os.Executable()
-	programPath := filepath.Dir(program)
+	programPath := "/etc/datadog-agent"
 	defaultConfigFile := filepath.Join(programPath, "datadog-secret-backend.yaml")
 
 	version := flag.Bool("version", false, "Print the version info")
 	configFile := flag.String("config", defaultConfigFile, "Path to backend configuration yaml")
-
+	listKeys := flag.Bool("list", false, "List all secret keys in the backend")
 	flag.Parse()
 
 	if *version {
 		fmt.Fprintf(os.Stdout, "%s v%s\n", filepath.Base(program), appVersion)
+		os.Exit(0)
+	}
+
+	backends := backend.NewBackends(*configFile)
+
+	if listKeys != nil && *listKeys {
+		secretOutputs := backends.ListSecretKeys()
+		output, err := json.Marshal(secretOutputs)
+		if err != nil {
+			log.Fatal().Err(err).Msg("failed to marshal output")
+		}
+		fmt.Print(string(output))
 		os.Exit(0)
 	}
 
@@ -65,7 +77,6 @@ func main() {
 		log.Fatal().Err(err).Msg("failed to unmarshal input")
 	}
 
-	backends := backend.NewBackends(*configFile)
 	secretOutputs := backends.GetSecretOutputs(inputPayload.Secrets)
 
 	output, err := json.Marshal(secretOutputs)
@@ -74,4 +85,5 @@ func main() {
 	}
 
 	fmt.Print(string(output))
+	os.Exit(0)
 }

@@ -18,3 +18,8 @@ type Output struct {
 	Value *string `json:"value"`
 	Error *string `json:"error"`
 }
+
+type Keys struct {
+	Keys  []string `json:"keys"`
+	Error *string  `json:"error"`
+}

@@ -139,3 +139,14 @@ func (b *VaultBackend) GetSecretOutput(secretKey string) secret.Output {
 		Msg("failed to retrieve secrets")
 	return secret.Output{Value: nil, Error: &es}
 }
+
+// ListSecretKeys returns a list of all secret keys in the backend
+func (b *VaultBackend) ListSecretKeys() secret.Keys {
+	keys := []string{}
+	for k := range b.Secret {
+		keys = append(keys, k)
+	}
+	return secret.Keys{
+		Keys: keys,
+	}
+}

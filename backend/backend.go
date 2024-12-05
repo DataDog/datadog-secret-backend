@@ -25,7 +25,10 @@ import (
 
 // Backend represents the common interface for all secret backends
 type Backend interface {
+	// GetSecretOutput returns a the value for a specific secret
 	GetSecretOutput(string) secret.Output
+	// ListSecretKeys returns a list of all secret keys in the backend
+	ListSecretKeys() secret.Keys
 }
 
 // Backends encapsulate all known backends
@@ -140,25 +143,47 @@ func (b *Backends) InitBackend(backendID string, config map[string]interface{}) 
 	}
 }
 
-// GetSecretOutputs returns a the value for a list of given secrets of form "<backendID>:<secret key>"
+// GetSecretOutputs returns a the value for a list of given secrets
 func (b *Backends) GetSecretOutputs(secrets []string) map[string]secret.Output {
 	secretOutputs := make(map[string]secret.Output, 0)
 
 	for _, s := range secrets {
-		segments := strings.SplitN(s, ":", 2)
-		backendID := segments[0]
-		secretKey := segments[1]
+		if segments := strings.SplitN(s, ":", 2); len(segments) >= 2 {
+			// If secret is prepended by the backend ID to use, use only this backend
+			backendID := segments[0]
+			secretKey := segments[1]
 
-		if _, ok := b.Backends[backendID]; !ok {
-			log.Error().Str("backend_id", backendID).Str("secret_key", secretKey).
-				Msg("undefined backend")
+			if _, ok := b.Backends[backendID]; !ok {
+				log.Error().Str("backend_id", backendID).Str("secret_key", secretKey).
+					Msg("undefined backend")
 
-			b.Backends[backendID] = &ErrorBackend{
-				BackendID: backendID,
-				Error:     fmt.Errorf("undefined backend"),
+				b.Backends[backendID] = &ErrorBackend{
+					BackendID: backendID,
+					Error:     fmt.Errorf("undefined backend"),
+				}
+			}
+			secretOutputs[s] = b.Backends[backendID].GetSecretOutput(secretKey)
+		} else {
+			// Go through all backends to find the secret, return the first one that matches
+			for _, v := range b.Backends {
+				secretOutputs[s] = v.GetSecretOutput(s)
+				if secretOutputs[s].Value != nil {
+					break
+				}
 			}
 		}
-		secretOutputs[s] = b.Backends[backendID].GetSecretOutput(secretKey)
 	}
 	return secretOutputs
+}
+
+// ListSecretKeys returns a list of all secret keys in all backends
+func (b *Backends) ListSecretKeys() secret.Keys {
+	keys := make([]string, 0)
+	for backendID, backend := range b.Backends {
+		backendKeys := backend.ListSecretKeys()
+		for _, key := range backendKeys.Keys {
+			keys = append(keys, fmt.Sprintf("%s:%s", backendID, key))
+		}
+	}
+	return secret.Keys{Keys: keys}
 }
