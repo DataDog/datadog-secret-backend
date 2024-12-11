@@ -82,9 +82,9 @@ func NewKeyVaultBackend(backendID string, bc map[string]interface{}) (*KeyVaultB
 	return backend, nil
 }
 
-// GetSecretOutput returns a the value for a specific secret
-func (b *KeyVaultBackend) GetSecretOutput(secretKey string) secret.Output {
-	if val, ok := b.Secret[secretKey]; ok {
+// GetSecretOutput returns the value for a specific secret
+func (b *KeyVaultBackend) GetSecretOutput(keyname string) secret.Output {
+	if val, ok := b.Secret[keyname]; ok {
 		return secret.Output{Value: &val, Error: nil}
 	}
 	es := errors.New("backend does not provide secret key").Error()
@@ -94,7 +94,7 @@ func (b *KeyVaultBackend) GetSecretOutput(secretKey string) secret.Output {
 		"backend_type": b.Config.BackendType,
 		"secret_id":    b.Config.SecretID,
 		"keyvaulturl":  b.Config.KeyVaultURL,
-		"secret_key":   secretKey,
+		"secret_key":   keyname,
 	}).Error("backend does not provide secret key")
 	return secret.Output{Value: nil, Error: &es}
 }
