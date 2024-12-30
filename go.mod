@@ -298,6 +298,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.23.4 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/dimchansky/utfbom v1.1.1 // indirect
+	github.com/go-chi/chi v1.5.5
 	github.com/go-jose/go-jose/v3 v3.0.3 // indirect
 	github.com/go-test/deep v1.1.1 // indirect
 	github.com/golang-jwt/jwt/v4 v4.5.1 // indirect
