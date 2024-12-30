@@ -68,7 +68,7 @@ func TestSSMParameterStoreBackend_Parameters(t *testing.T) {
 			"/group1/nest/key2": "value2",
 		},
 	}
-	getClient = func(_ aws.Config) ssmClient {
+	getSSMClient = func(_ aws.Config) ssmClient {
 		return mockClient
 	}
 
@@ -96,7 +96,7 @@ func TestSSMParameterStoreBackend_ParametersByPath(t *testing.T) {
 			"/group2/key3":      "value3",
 		},
 	}
-	getClient = func(_ aws.Config) ssmClient {
+	getSSMClient = func(_ aws.Config) ssmClient {
 		return mockClient
 	}
 

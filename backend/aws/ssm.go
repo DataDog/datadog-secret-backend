@@ -25,9 +25,9 @@ type ssmClient interface {
 	GetParameters(ctx context.Context, params *ssm.GetParametersInput, optFns ...func(*ssm.Options)) (*ssm.GetParametersOutput, error)
 }
 
-// getClient is a variable that holds the function to create a new ssmClient
+// getSSMClient is a variable that holds the function to create a new ssmClient
 // it will be overwritten in tests
-var getClient = func(cfg aws.Config) ssmClient {
+var getSSMClient = func(cfg aws.Config) ssmClient {
 	return ssm.NewFromConfig(cfg)
 }
 
@@ -66,7 +66,7 @@ func NewSSMParameterStoreBackend(backendID string, bc map[string]interface{}) (
 			Msg("failed to initialize aws session")
 		return nil, err
 	}
-	client := getClient(*cfg)
+	client := getSSMClient(*cfg)
 
 	// GetParametersByPath
 	if backendConfig.ParameterPath != "" {

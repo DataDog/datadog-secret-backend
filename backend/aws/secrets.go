@@ -11,12 +11,26 @@ import (
 	"context"
 	"encoding/json"
 
+	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/secretsmanager"
 	"github.com/mitchellh/mapstructure"
 	"github.com/rs/zerolog/log"
 
 	"github.com/DataDog/datadog-secret-backend/secret"
 )
+
+// ssmClient is an interface that defines the methods we use from the ssm client
+// As the AWS SDK doesn't provide a real mock, we'll have to make our own that
+// matches this interface
+type secretsManagerClient interface {
+	GetSecretValue(ctx context.Context, params *secretsmanager.GetSecretValueInput, optFns ...func(*secretsmanager.Options)) (*secretsmanager.GetSecretValueOutput, error)
+}
+
+// getSecretsManagerClient is a variable that holds the function to create a new ssmClient
+// it will be overwritten in tests
+var getSecretsManagerClient = func(cfg aws.Config) secretsManagerClient {
+	return secretsmanager.NewFromConfig(cfg)
+}
 
 // SecretsManagerBackendConfig is the configuration for a AWS Secret Manager backend
 type SecretsManagerBackendConfig struct {
@@ -53,7 +67,7 @@ func NewSecretsManagerBackend(backendID string, bc map[string]interface{}) (
 			Msg("failed to initialize aws session")
 		return nil, err
 	}
-	client := secretsmanager.NewFromConfig(*cfg)
+	client := getSecretsManagerClient(*cfg)
 
 	// GetSecretValue
 	input := &secretsmanager.GetSecretValueInput{
