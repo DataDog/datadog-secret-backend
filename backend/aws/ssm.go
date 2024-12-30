@@ -8,7 +8,6 @@ package aws
 
 import (
 	"context"
-	"errors"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/ssm"
@@ -123,7 +122,7 @@ func (b *SSMParameterStoreBackend) GetSecretOutput(secretKey string) secret.Outp
 	if val, ok := b.Secret[secretKey]; ok {
 		return secret.Output{Value: &val, Error: nil}
 	}
-	es := errors.New("backend does not provide secret key").Error()
+	es := secret.ErrKeyNotFound.Error()
 
 	log.Error().
 		Str("backend_id", b.BackendID).

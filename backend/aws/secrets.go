@@ -10,7 +10,6 @@ package aws
 import (
 	"context"
 	"encoding/json"
-	"errors"
 
 	"github.com/aws/aws-sdk-go-v2/service/secretsmanager"
 	"github.com/mitchellh/mapstructure"
@@ -94,13 +93,13 @@ func (b *SecretsManagerBackend) GetSecretOutput(secretKey string) secret.Output 
 	if val, ok := b.Secret[secretKey]; ok {
 		return secret.Output{Value: &val, Error: nil}
 	}
-	es := errors.New("backend does not provide secret key").Error()
+	es := secret.ErrKeyNotFound.Error()
 
 	log.Error().
 		Str("backend_id", b.BackendID).
 		Str("backend_type", b.Config.BackendType).
 		Str("secret_id", b.Config.SecretID).
 		Str("secret_key", secretKey).
-		Msg("backend does not provide secret key")
+		Msg(es)
 	return secret.Output{Value: nil, Error: &es}
 }

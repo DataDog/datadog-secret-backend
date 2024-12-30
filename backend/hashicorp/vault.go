@@ -128,7 +128,7 @@ func (b *VaultBackend) GetSecretOutput(secretKey string) secret.Output {
 	if val, ok := b.Secret[secretKey]; ok {
 		return secret.Output{Value: &val, Error: nil}
 	}
-	es := errors.New("backend does not provide secret key").Error()
+	es := secret.ErrKeyNotFound.Error()
 
 	log.Error().
 		Str("backend_id", b.BackendID).

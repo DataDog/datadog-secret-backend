@@ -10,7 +10,6 @@ package azure
 import (
 	"context"
 	"encoding/json"
-	"errors"
 
 	"github.com/Azure/azure-sdk-for-go/services/keyvault/v7.1/keyvault"
 	"github.com/DataDog/datadog-secret-backend/secret"
@@ -87,7 +86,7 @@ func (b *KeyVaultBackend) GetSecretOutput(secretKey string) secret.Output {
 	if val, ok := b.Secret[secretKey]; ok {
 		return secret.Output{Value: &val, Error: nil}
 	}
-	es := errors.New("backend does not provide secret key").Error()
+	es := secret.ErrKeyNotFound.Error()
 
 	log.WithFields(log.Fields{
 		"backend_id":   b.BackendID,
