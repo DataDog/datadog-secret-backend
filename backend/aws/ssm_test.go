@@ -11,6 +11,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/DataDog/datadog-secret-backend/secret"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/ssm"
 	"github.com/aws/aws-sdk-go-v2/service/ssm/types"
@@ -85,7 +86,7 @@ func TestSSMParameterStoreBackend_Parameters(t *testing.T) {
 
 	secretOutput = ssmParameterStoreSecretsBackend.GetSecretOutput("key_noexist")
 	assert.Nil(t, secretOutput.Value)
-	assert.Equal(t, "backend does not provide secret key", *secretOutput.Error)
+	assert.Equal(t, secret.ErrKeyNotFound.Error(), *secretOutput.Error)
 }
 
 func TestSSMParameterStoreBackend_ParametersByPath(t *testing.T) {
@@ -117,9 +118,9 @@ func TestSSMParameterStoreBackend_ParametersByPath(t *testing.T) {
 
 	secretOutput = ssmParameterStoreSecretsBackend.GetSecretOutput("/group1/key_noexist")
 	assert.Nil(t, secretOutput.Value)
-	assert.Equal(t, "backend does not provide secret key", *secretOutput.Error)
+	assert.Equal(t, secret.ErrKeyNotFound.Error(), *secretOutput.Error)
 
 	secretOutput = ssmParameterStoreSecretsBackend.GetSecretOutput("/group2/key3")
 	assert.Nil(t, secretOutput.Value)
-	assert.Equal(t, "backend does not provide secret key", *secretOutput.Error)
+	assert.Equal(t, secret.ErrKeyNotFound.Error(), *secretOutput.Error)
 }

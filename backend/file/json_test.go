@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/DataDog/datadog-secret-backend/secret"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -47,5 +48,5 @@ func TestJSONBackend(t *testing.T) {
 
 	secretOutput = jsonSecretsBackend.GetSecretOutput("key_noexist")
 	assert.Nil(t, secretOutput.Value)
-	assert.Equal(t, "backend does not provide secret key", *secretOutput.Error)
+	assert.Equal(t, secret.ErrKeyNotFound.Error(), *secretOutput.Error)
 }

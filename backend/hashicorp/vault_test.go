@@ -10,6 +10,7 @@ import (
 	"net"
 	"testing"
 
+	"github.com/DataDog/datadog-secret-backend/secret"
 	"github.com/hashicorp/vault/api"
 	"github.com/hashicorp/vault/http"
 	"github.com/hashicorp/vault/vault"
@@ -45,7 +46,7 @@ func TestVaultBackend(t *testing.T) {
 
 	secretOutput = secretsBackend.GetSecretOutput("key_noexist")
 	assert.Nil(t, secretOutput.Value)
-	assert.Equal(t, "backend does not provide secret key", *secretOutput.Error)
+	assert.Equal(t, secret.ErrKeyNotFound.Error(), *secretOutput.Error)
 }
 
 func createTestVault(t *testing.T) (net.Listener, *api.Client, string) {
