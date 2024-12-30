@@ -42,7 +42,7 @@ func TestKeyvaultBackend(t *testing.T) {
 	}
 
 	keyvaultBackendParams := map[string]interface{}{
-		"backend_type": "keyvault",
+		"backend_type": "azure.keyvault",
 		"secret_id":    "key1",
 		"force_string": false,
 	}
@@ -80,7 +80,7 @@ func TestKeyvaultBackend_ForceString(t *testing.T) {
 	}
 
 	keyvaultBackendParams := map[string]interface{}{
-		"backend_type": "keyvault",
+		"backend_type": "azure.keyvault",
 		"secret_id":    "key1",
 		"force_string": true,
 	}
@@ -108,7 +108,7 @@ func TestKeyvaultBackend_NotJSON(t *testing.T) {
 	}
 
 	keyvaultBackendParams := map[string]interface{}{
-		"backend_type": "keyvault",
+		"backend_type": "azure.keyvault",
 		"secret_id":    "key1",
 		"force_string": false,
 	}

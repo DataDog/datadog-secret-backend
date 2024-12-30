@@ -35,14 +35,14 @@ key2: value2
 	}
 
 	yamlSecretsBackendParams := map[string]interface{}{
-		"backend_type": "yaml",
+		"backend_type": "file.yaml",
 		"file_path":    secretsFilepath,
 	}
 	yamlSecretsBackend, err := NewYAMLBackend("yaml-backend", yamlSecretsBackendParams)
 	assert.NoError(t, err)
 
 	assert.Equal(t, "yaml-backend", yamlSecretsBackend.BackendID)
-	assert.Equal(t, "yaml", yamlSecretsBackend.Config.BackendType)
+	assert.Equal(t, "file.yaml", yamlSecretsBackend.Config.BackendType)
 	assert.Equal(t, secretsFilepath, yamlSecretsBackend.Config.FilePath)
 
 	secretOutput := yamlSecretsBackend.GetSecretOutput("key1")

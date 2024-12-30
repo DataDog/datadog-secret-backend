@@ -32,7 +32,7 @@ func TestVaultBackend(t *testing.T) {
 		"vault_address": client.Address(),
 		"secret_path":   "secret/foo",
 		"secrets":       []string{"key1", "key2"},
-		"backend_type":  "vault",
+		"backend_type":  "hashicorp.vault",
 		// Note: we're not testing the whole "session" part of the backend here as we're using the root token.
 		"vault_token": token,
 	}

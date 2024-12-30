@@ -32,14 +32,14 @@ func TestJSONBackend(t *testing.T) {
 	}
 
 	jsonSecretsBackendParams := map[string]interface{}{
-		"backend_type": "json",
+		"backend_type": "file.json",
 		"file_path":    secretsFilepath,
 	}
 	jsonSecretsBackend, err := NewJSONBackend("json-backend", jsonSecretsBackendParams)
 	assert.NoError(t, err)
 
 	assert.Equal(t, "json-backend", jsonSecretsBackend.BackendID)
-	assert.Equal(t, "json", jsonSecretsBackend.Config.BackendType)
+	assert.Equal(t, "file.json", jsonSecretsBackend.Config.BackendType)
 	assert.Equal(t, secretsFilepath, jsonSecretsBackend.Config.FilePath)
 
 	secretOutput := jsonSecretsBackend.GetSecretOutput("key1")

@@ -50,7 +50,7 @@ func TestSecretsManagerBackend(t *testing.T) {
 	}
 
 	secretsManagerBackendParams := map[string]interface{}{
-		"backend_type": "secretsManager",
+		"backend_type": "aws.secrets",
 		"secret_id":    "key1",
 		"force_string": false,
 	}
@@ -88,7 +88,7 @@ func TestSecretsManagerBackend_ForceString(t *testing.T) {
 	}
 
 	secretsManagerBackendParams := map[string]interface{}{
-		"backend_type": "secretsManager",
+		"backend_type": "aws.secrets",
 		"secret_id":    "key1",
 		"force_string": true,
 	}
@@ -116,7 +116,7 @@ func TestSecretsManagerBackend_NotJSON(t *testing.T) {
 	}
 
 	secretsManagerBackendParams := map[string]interface{}{
-		"backend_type": "secretsManager",
+		"backend_type": "aws.secrets",
 		"secret_id":    "key1",
 		"force_string": false,
 	}
