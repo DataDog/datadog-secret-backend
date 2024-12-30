@@ -24,7 +24,7 @@ type ssmMockClient struct {
 	parameters map[string]interface{}
 }
 
-func (c *ssmMockClient) GetParametersByPath(ctx context.Context, params *ssm.GetParametersByPathInput, optFns ...func(*ssm.Options)) (*ssm.GetParametersByPathOutput, error) {
+func (c *ssmMockClient) GetParametersByPath(_ context.Context, params *ssm.GetParametersByPathInput, _ ...func(*ssm.Options)) (*ssm.GetParametersByPathOutput, error) {
 	if params == nil || params.Path == nil {
 		return nil, nil
 	}
@@ -43,7 +43,7 @@ func (c *ssmMockClient) GetParametersByPath(ctx context.Context, params *ssm.Get
 	}, nil
 }
 
-func (c *ssmMockClient) GetParameters(ctx context.Context, params *ssm.GetParametersInput, optFns ...func(*ssm.Options)) (*ssm.GetParametersOutput, error) {
+func (c *ssmMockClient) GetParameters(_ context.Context, params *ssm.GetParametersInput, _ ...func(*ssm.Options)) (*ssm.GetParametersOutput, error) {
 	outParameters := []types.Parameter{}
 	for key, value := range c.parameters {
 		for _, name := range params.Names {

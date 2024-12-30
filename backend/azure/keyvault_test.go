@@ -22,7 +22,7 @@ type keyvaultMockClient struct {
 	secrets map[string]interface{}
 }
 
-func (c *keyvaultMockClient) GetSecret(ctx context.Context, vaultBaseURL string, secretName string, secretVersion string) (result keyvault.SecretBundle, err error) {
+func (c *keyvaultMockClient) GetSecret(_ context.Context, _ string, secretName string, _ string) (result keyvault.SecretBundle, err error) {
 	val := c.secrets[secretName].(string)
 	return keyvault.SecretBundle{
 		Value: &val,

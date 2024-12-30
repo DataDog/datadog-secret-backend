@@ -22,7 +22,7 @@ type secretsManagerMockClient struct {
 	secrets map[string]interface{}
 }
 
-func (c *secretsManagerMockClient) GetSecretValue(ctx context.Context, params *secretsmanager.GetSecretValueInput, optFns ...func(*secretsmanager.Options)) (*secretsmanager.GetSecretValueOutput, error) {
+func (c *secretsManagerMockClient) GetSecretValue(_ context.Context, params *secretsmanager.GetSecretValueInput, _ ...func(*secretsmanager.Options)) (*secretsmanager.GetSecretValueOutput, error) {
 	if params == nil || params.SecretId == nil {
 		return nil, nil
 	}

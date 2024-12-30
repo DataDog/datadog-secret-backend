@@ -41,14 +41,20 @@ func mockAkeylessServer(secrets map[string]interface{}) *httptest.Server {
 			}
 		}
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(resp)
+		err = json.NewEncoder(w).Encode(resp)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
 	})
-	router.Post("/auth", func(w http.ResponseWriter, req *http.Request) {
+	router.Post("/auth", func(w http.ResponseWriter, _ *http.Request) {
 		response := authResponse{
 			Token: testToken,
 		}
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(response)
+		err := json.NewEncoder(w).Encode(response)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
 	})
 
 	ts := httptest.NewServer(router)
