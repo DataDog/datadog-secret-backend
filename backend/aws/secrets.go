@@ -19,14 +19,14 @@ import (
 	"github.com/DataDog/datadog-secret-backend/secret"
 )
 
-// ssmClient is an interface that defines the methods we use from the ssm client
+// secretsManagerClient is an interface that defines the methods we use from the ssm client
 // As the AWS SDK doesn't provide a real mock, we'll have to make our own that
 // matches this interface
 type secretsManagerClient interface {
 	GetSecretValue(ctx context.Context, params *secretsmanager.GetSecretValueInput, optFns ...func(*secretsmanager.Options)) (*secretsmanager.GetSecretValueOutput, error)
 }
 
-// getSecretsManagerClient is a variable that holds the function to create a new ssmClient
+// getSecretsManagerClient is a variable that holds the function to create a new secretsManagerClient
 // it will be overwritten in tests
 var getSecretsManagerClient = func(cfg aws.Config) secretsManagerClient {
 	return secretsmanager.NewFromConfig(cfg)

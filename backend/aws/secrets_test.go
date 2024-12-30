@@ -16,10 +16,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// secretsManagerMock is the struct we'll use to mock the SSM client
+// secretsManagerMockClient is the struct we'll use to mock the Secrets Manager client
 // for unit tests. E2E tests should be written with the real client.
 type secretsManagerMockClient struct {
-	parameters map[string]interface{}
+	secrets map[string]interface{}
 }
 
 func (c *secretsManagerMockClient) GetSecretValue(ctx context.Context, params *secretsmanager.GetSecretValueInput, optFns ...func(*secretsmanager.Options)) (*secretsmanager.GetSecretValueOutput, error) {
@@ -27,7 +27,7 @@ func (c *secretsManagerMockClient) GetSecretValue(ctx context.Context, params *s
 		return nil, nil
 	}
 
-	for key, value := range c.parameters {
+	for key, value := range c.secrets {
 		if key == *params.SecretId {
 			return &secretsmanager.GetSecretValueOutput{
 				Name:         aws.String(key),
@@ -40,7 +40,7 @@ func (c *secretsManagerMockClient) GetSecretValue(ctx context.Context, params *s
 
 func TestSecretsManagerBackend(t *testing.T) {
 	mockClient := &secretsManagerMockClient{
-		parameters: map[string]interface{}{
+		secrets: map[string]interface{}{
 			"key1": "{\"user\":\"foo\",\"password\":\"bar\"}",
 			"key2": "{\"foo\":\"bar\"}",
 		},
@@ -78,7 +78,7 @@ func TestSecretsManagerBackend(t *testing.T) {
 
 func TestSecretsManagerBackend_ForceString(t *testing.T) {
 	mockClient := &secretsManagerMockClient{
-		parameters: map[string]interface{}{
+		secrets: map[string]interface{}{
 			"key1": "{\"user\":\"foo\",\"password\":\"bar\"}",
 			"key2": "{\"foo\":\"bar\"}",
 		},
@@ -106,7 +106,7 @@ func TestSecretsManagerBackend_ForceString(t *testing.T) {
 
 func TestSecretsManagerBackend_NotJSON(t *testing.T) {
 	mockClient := &secretsManagerMockClient{
-		parameters: map[string]interface{}{
+		secrets: map[string]interface{}{
 			"key1": "not json",
 			"key2": "foobar",
 		},
