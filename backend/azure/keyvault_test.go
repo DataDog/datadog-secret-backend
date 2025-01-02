@@ -23,11 +23,14 @@ type keyvaultMockClient struct {
 }
 
 func (c *keyvaultMockClient) GetSecret(_ context.Context, _ string, secretName string, _ string) (result keyvault.SecretBundle, err error) {
-	val := c.secrets[secretName].(string)
-	return keyvault.SecretBundle{
-		Value: &val,
-		ID:    &secretName,
-	}, nil
+	if _, ok := c.secrets[secretName]; ok {
+		val := c.secrets[secretName].(string)
+		return keyvault.SecretBundle{
+			Value: &val,
+			ID:    &secretName,
+		}, nil
+	}
+	return keyvault.SecretBundle{}, secret.ErrKeyNotFound
 }
 
 func TestKeyvaultBackend(t *testing.T) {

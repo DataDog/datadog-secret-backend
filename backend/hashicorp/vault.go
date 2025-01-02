@@ -118,7 +118,9 @@ func NewVaultBackend(backendID string, bc map[string]interface{}) (*VaultBackend
 	if backendConfig.SecretPath != "" {
 		if len(backendConfig.Secrets) > 0 {
 			for _, item := range backendConfig.Secrets {
-				secretValue[item] = secret.Data[item].(string)
+				if data, ok := secret.Data[item]; ok {
+					secretValue[item] = data.(string)
+				}
 			}
 		}
 	}

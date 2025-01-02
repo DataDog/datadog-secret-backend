@@ -49,6 +49,43 @@ func TestVaultBackend(t *testing.T) {
 	assert.Equal(t, secret.ErrKeyNotFound.Error(), *secretOutput.Error)
 }
 
+func TestVaultBackend_KeyNotFound(t *testing.T) {
+	ln, client, token := createTestVault(t)
+	defer ln.Close()
+
+	_, err := client.Logical().Write("secret/foo", map[string]interface{}{
+		"key1": "value1",
+		"key2": "value2",
+	})
+	assert.NoError(t, err)
+
+	// Create a new Vault backend.
+	backendConfig := map[string]interface{}{
+		"vault_address": client.Address(),
+		"secret_path":   "secret/foo",
+		"secrets":       []string{"key_noexist"},
+		"backend_type":  "hashicorp.vault",
+		// Note: we're not testing the whole "session" part of the backend here as we're using the root token.
+		"vault_token": token,
+	}
+
+	secretsBackend, err := NewVaultBackend("vault-backend", backendConfig)
+	assert.NoError(t, err)
+
+	// Check that the keys are not found.
+	secretOutput := secretsBackend.GetSecretOutput("key1")
+	assert.Nil(t, secretOutput.Value)
+	assert.Equal(t, secret.ErrKeyNotFound.Error(), *secretOutput.Error)
+
+	secretOutput = secretsBackend.GetSecretOutput("key2")
+	assert.Nil(t, secretOutput.Value)
+	assert.Equal(t, secret.ErrKeyNotFound.Error(), *secretOutput.Error)
+
+	secretOutput = secretsBackend.GetSecretOutput("key_noexist")
+	assert.Nil(t, secretOutput.Value)
+	assert.Equal(t, secret.ErrKeyNotFound.Error(), *secretOutput.Error)
+}
+
 func createTestVault(t *testing.T) (net.Listener, *api.Client, string) {
 	t.Helper()
 
