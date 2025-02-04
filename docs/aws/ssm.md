@@ -14,7 +14,6 @@
       "Effect": "Allow",
       "Action": "ssm:GetParameter",
       "Resource": [
-        "arn:aws:ssm:${Region}:${Account}:parameter/${ParameterNameWithoutLeadingSlash}",
         "arn:aws:ssm:${Region}:${Account}:parameter/${ParameterNameWithoutLeadingSlash}"
       ]
     }
