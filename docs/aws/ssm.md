@@ -6,21 +6,30 @@
 
 ### IAM Permission needed
 
+Add this permission as a permission policy to the user role that has been attached to the EC2 instance upon which the given agent is running.
+
 ```json
 {
   "Version": "2012-10-17",
   "Statement": [
     {
       "Effect": "Allow",
-      "Action": "ssm:GetParameter",
+      "Action": [
+				"ssm:GetParameters",
+				"ssm:GetParameter",
+				"ssm:GetParametersByPath",
+				"ssm:DescribeParameters"
+			],
       "Resource": [
-        "arn:aws:ssm:${Region}:${Account}:parameter/${ParameterNameWithoutLeadingSlash}"
+        "arn:aws:ssm:${Region}:${Account}:parameter/${ParameterPathWithoutLeadingSlash}"
       ]
     }
   ]
 }
 
 ```
+
+You can use a wildcard when specifying the parameter path `Resource` (for example, `datadog/*` for all resources within in the `datadog` folder).
 
 ### Backend Settings
 
@@ -31,6 +40,8 @@
 | parameters | List of individual SSM parameters |
 
 ## Backend Configuration
+
+Ensure that you have followed the instructions specified in the general [aws README](https://github.com/DataDog/datadog-secret-backend/blob/main/docs/aws/README.md) to avoid hardcoding any confidential information in your config file.
 
 The backend configuration for AWS SSM Parameter Store secrets has the following pattern:
 
@@ -56,7 +67,7 @@ The backend secret is referenced in your Datadog Agent configuration files using
 ```yaml
 # /etc/datadog-agent/datadog.yaml
 
-api_key: "ENC[{backendId}:{parameter_full_path}"
+api_key: ENC[{backendId}:{parameter_full_path}]
 
 ```
 
@@ -76,12 +87,10 @@ The parameters can be fetched using **parameter_path**:
 ---
 backends:
   MySecretBackend:
-    backend_type: aws.secrets
+    backend_type: aws.ssm
     parameter_path: /DatadogAgent/Production
     aws_session:
       aws_region: us-east-1
-      aws_access_key_id: AKIA*****
-      aws_secret_access_key: ************
 ```
 
 or fetched using **parameters**:
@@ -91,15 +100,13 @@ or fetched using **parameters**:
 ---
 backends:
   MySecretBackend:
-    backend_type: aws.secrets
+    backend_type: aws.ssm
     parameters: 
       - /DatadogAgent/Production/ParameterKey1
       - /DatadogAgent/Production/ParameterKey2
       - /DatadogAgent/Production/ParameterKey3
     aws_session:
       aws_region: us-east-1
-      aws_access_key_id: AKIA*****
-      aws_secret_access_key: ************
 ```
 
 and finally accessed in the Datadog Agent:
@@ -150,25 +157,5 @@ backends:
     backend_type: aws.secrets
     aws_session:
       aws_region: us-east-1 # set to region of the Secrets Manager secret
-      aws_access_key_id: AKIA*****
-      aws_secret_access_key: ************
     parameter_path: /DatadogAgent/Production
-```
-
-**AWS IAM User with sts:AssumeRole and specific SSM parameters**
-
-```yaml
-# /opt/datadog-secret-backend/datadog-secret-backend.yaml
----
-backends:
-  agent_secret:
-    backend_type: aws.secrets
-    aws_session:
-      aws_region: us-east-1 # set to region of the Secrets Manager secret
-      aws_access_key_id: AKIA*****
-      aws_secret_access_key: ************
-      aws_role_arn: arn:aws:iam::123456789012:role/DatadogAgentAssumedRole
-      aws_external_id: 3d3e9a6e-f194-4201-a213-0dd1009f6891
-    parameters:
-      - /DatadogAgent/Production/api_key
 ```
