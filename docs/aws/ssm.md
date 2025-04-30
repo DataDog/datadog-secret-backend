@@ -4,9 +4,9 @@
 
 ## Configuration
 
-### IAM Permission needed
+### IAM Permission Policy (if using an Instance Profile)
 
-Add this permission as a permission policy to the user role that has been attached to the EC2 instance upon which the given agent is running.
+Create a similar IAM Permission Policy as the example below to allow resources (EC2, ECS, etc. instances) to access your specified secrets. Please refer to [AWS SSM official documentation](https://docs.aws.amazon.com/systems-manager/) for more details on allowing resources to access secrets. 
 
 ```json
 {
@@ -30,6 +30,8 @@ Add this permission as a permission policy to the user role that has been attach
 ```
 
 You can use a wildcard when specifying the parameter path `Resource` (for example, `datadog/*` for all resources within in the `datadog` folder).
+
+This is just one step in setting up the Instance Profile. Refer to the [Instance Profile Instructions](https://github.com/DataDog/datadog-secret-backend/blob/main/docs/aws/README.md#instance-profile-instructions) in the AWS README to complete the setup.
 
 ### Backend Settings
 

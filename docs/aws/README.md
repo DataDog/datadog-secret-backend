@@ -22,6 +22,31 @@ Supported AWS backends can leverage the Default Credential Provider Chain as def
 
 Using environment variables or session profiles are more complex as they must be configured within the service (daemon) environment configuration or the `dd-agent` user home directory on each Datadog Agent host. Using IAM User Access Keys or an EC2 Instance Profile are simpler configurations which do not require additional Datadog Agent host configuration.
 
+### Instance Profile Instructions
+
+We **highly encourage** to use the instance profile method of retrieving secrets, as AWS handles any environment variables or session profiles for you. 
+
+To use an Instance Profile, create an IAM role in the same account that you are hosting your EC2, ECS, etc. from. Set the "trusted entity type" to the "AWS Service" and choose the relevant service to you (for example, EC2 if you are using an EC2 instance). This IAM role can now be used by an instance of the service that you selected. 
+
+Then, choose a permission policy. Instructions on what permission policy to create are dependent on whether you are using [AWS Secrets](https://github.com/DataDog/datadog-secret-backend/blob/main/docs/aws/secrets.md#iam-permission-needed) or [AWS SSM](https://github.com/DataDog/datadog-secret-backend/blob/main/docs/aws/ssm.md#iam-permission-needed). Finally, set a trust policy--replace ${Service} with the service that you are using:
+
+```json
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Principal": {
+                "Service": "${Service}.amazonaws.com"
+            },
+            "Action": "sts:AssumeRole"
+        }
+    ]
+}
+```
+
+Now for the instance that you are retrieving secrets for, set the "IAM Role" section to be this role that you have just created. Restart your instance after doing this.
+
 ## AWS Session Settings
 
 The following `aws_session` settings are available on all supported AWS Service backends:
