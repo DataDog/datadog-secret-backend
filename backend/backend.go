@@ -91,11 +91,7 @@ func (b *Backend) InitBackend(backendType string, backendConfig map[string]inter
 // GetSecretOutputs returns a the value for a list of given secrets of form "<secret key>"
 func (b *Backend) GetSecretOutputs(secrets []string) map[string]secret.Output {
 	secretOutputs := make(map[string]secret.Output, 0)
-
 	for _, secretKey := range secrets {
-		b.Backend = &ErrorBackend{
-			Error: fmt.Errorf("undefined backend"),
-		}
 		secretOutputs[secretKey] = b.Backend.GetSecretOutput(secretKey)
 	}
 	return secretOutputs
