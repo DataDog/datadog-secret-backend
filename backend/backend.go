@@ -18,14 +18,14 @@ import (
 	"github.com/DataDog/datadog-secret-backend/secret"
 )
 
-// BackendInterface represents the common interface for the secret backends
-type BackendInterface interface {
+// Interface represents the common interface for the secret backends
+type Interface interface {
 	GetSecretOutput(string) secret.Output
 }
 
 // Backend encapsulate all known backends
 type Backend struct {
-	Backend BackendInterface
+	Backend Interface
 }
 
 // InitBackend initialize the backend based on their configuration
