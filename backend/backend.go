@@ -30,7 +30,7 @@ type Backend struct {
 
 // InitBackend initialize the backend based on their configuration
 func (b *Backend) InitBackend(backendType string, backendConfig map[string]interface{}) {
-
+	backendConfig["backend_type"] = backendType
 	switch backendType {
 	case "aws.secrets":
 		backend, err := aws.NewSecretsManagerBackend(backendConfig)
