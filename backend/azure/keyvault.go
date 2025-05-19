@@ -65,6 +65,7 @@ func NewKeyVaultBackend(bc map[string]interface{}) (*KeyVaultBackend, error) {
 	if backendConfig.Session != nil {
 		cfg, err = NewConfigFromBackendConfig(*backendConfig.Session)
 		if err != nil {
+			log.WithError(err).Error("failed to initialize azure session")
 			return nil, err
 		}
 	}

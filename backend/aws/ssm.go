@@ -52,6 +52,8 @@ func NewSSMParameterStoreBackend(bc map[string]interface{}) (
 	backendConfig := SSMParameterStoreBackendConfig{}
 	err := mapstructure.Decode(bc, &backendConfig)
 	if err != nil {
+		log.Error().Err(err).
+			Msg("failed to map backend configuration")
 		return nil, err
 	}
 
@@ -59,6 +61,8 @@ func NewSSMParameterStoreBackend(bc map[string]interface{}) (
 
 	cfg, err := NewConfigFromBackendConfig(backendConfig.Session)
 	if err != nil {
+		log.Error().Err(err).
+			Msg("failed to initialize aws session")
 		return nil, err
 	}
 	client := getSSMClient(*cfg)

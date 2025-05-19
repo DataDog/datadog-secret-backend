@@ -48,11 +48,15 @@ func NewAkeylessBackend(bc map[string]interface{}) (*Backend, error) {
 	backendConfig := BackendConfig{}
 	err := mapstructure.Decode(bc, &backendConfig)
 	if err != nil {
+		log.Error().Err(err).
+			Msg("failed to map backend configuration")
 		return nil, err
 	}
 
 	authToken, err := NewAkeylessConfigFromBackendConfig(backendConfig.AkeylessURL, backendConfig.AkeylessSession)
 	if err != nil {
+		log.Error().Err(err).
+			Msg("failed to initialize Akeyless session")
 		return nil, err
 	}
 

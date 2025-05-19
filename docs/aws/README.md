@@ -67,27 +67,27 @@ When handling single strings, the backend configuration setting `force_string: t
 
 ## Example Session Configurations
 
-### AWS IAM User Access Key for an SSM parameter in us-east-2
+### AWS IAM User Access Key for an SSM parameter in us-east-1
 ```yaml
 ---
-backends:
-  my-ssm-secret:
-    backend_type: aws.ssm
-    aws_session:
-      aws_region: us-east-2
-    parameters: 
-      - /My/Secret/Path/To/Secret
+ secret_backend_type: aws.ssm
+ secret_backend_config:
+  parameters: 
+    - /DatadogAgent/Production/ParameterKey1
+    - /DatadogAgent/Production/ParameterKey2
+    - /DatadogAgent/Production/ParameterKey3
+  aws_session:
+    aws_region: us-east-1
 ```
 
 ### AWS Credential Provider Profile for a Secrets Manager secret in us-east-1
 ```yaml
 ---
-backends:
-  my-ssm-secret:
-    backend_type: aws.secrets
-    aws_session:
-      aws_region: us-east-1
-    secret_id: 'datadog-agent'
+ secret_backend_type: aws.secrets
+ secret_backend_config:
+  secret_id: My-Secret-Backend-Secret
+  aws_session:
+    aws_region: us-east-1
 ```
 
 Review the [aws.ssm](ssm.md) and [aws.secrets](secrets.md) backend documentation examples of configurations for Datadog Agent secrets.

@@ -36,6 +36,8 @@ func NewJSONBackend(bc map[string]interface{}) (
 	backendConfig := JSONBackendConfig{}
 	err := mapstructure.Decode(bc, &backendConfig)
 	if err != nil {
+		log.Error().Err(err).
+			Msg("failed to map backend configuration")
 		return nil, err
 	}
 

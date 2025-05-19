@@ -36,6 +36,8 @@ func NewYAMLBackend(bc map[string]interface{}) (
 	backendConfig := YamlBackendConfig{}
 	err := mapstructure.Decode(bc, &backendConfig)
 	if err != nil {
+		log.Error().Err(err).
+			Msg("failed to map backend configuration")
 		return nil, err
 	}
 
