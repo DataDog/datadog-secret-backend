@@ -44,9 +44,8 @@ The backend configuration for AWS Secrets Manager secrets has the following patt
 
 ```yaml
 ---
-backends:
-  {backendId}:
-    backend_type: aws.secrets
+  secret_backend_type: aws.secrets
+  secret_backend_config:
     aws_session:
       aws_region: {regionName}
     secret_id: {secretId}

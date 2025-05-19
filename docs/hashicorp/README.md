@@ -40,9 +40,8 @@ The following `vault_session` settings are available:
 
 ```yaml
 ---
-backends:
-  MySecretBackend:
-    backend_type: hashicorp.vault
+  secret_backend_type: hashicorp.vault
+  secret_backend_config:
     vault_address: vault_address: http://myvaultaddress.net
     vault_tls_config:
         # ... TLS settings if applicable
@@ -59,9 +58,8 @@ backends:
 
 ```yaml
 ---
-backends:
-  MySecretBackend:
-    backend_type: hashicorp.vault
+  secret_backend_type: hashicorp.vault
+  secret_backend_config:
     vault_address: vault_address: http://myvaultaddress.net
     vault_tls_config:
         # ... TLS settings if applicable
@@ -79,9 +77,8 @@ backends:
 
 ```yaml
 ---
-backends:
-  MySecretBackend:
-    backend_type: hashicorp.vault
+  secret_backend_type: hashicorp.vault
+  secret_backend_config:
     vault_address: vault_address: http://myvaultaddress.net
     vault_tls_config:
         # ... TLS settings if applicable

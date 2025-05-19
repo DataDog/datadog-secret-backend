@@ -31,9 +31,8 @@ The backend configuration for Hashicorp Vault has the following pattern:
 
 ```yaml
 ---
-backends:
-  {backendId}:
-    backend_type: hashicorp.vault
+  secret_backend_type: hashicorp.vault
+  secret_backend_config:
     vault_address: http://myvaultaddress.net
     vault_tls_config:
         # ... TLS settings if applicable
@@ -61,11 +60,10 @@ api_key: "ENC[{secret]"
 The secrets can be fetched using **parameter_path** with **secrets**:
 
 ```yaml
-# /opt/datadog-secret-backend/datadog-secret-backend.yaml
+# /etc/datadog-agent/datadog.yaml
 ---
-backends:
-  MySecretBackend:
-    backend_type: hashicorp.vault
+  secret_backend_type: hashicorp.vault
+  secret_backend_config:
     vault_address: vault_address: http://myvaultaddress.net
     vault_tls_config:
         # ... TLS settings if applicable
@@ -81,9 +79,9 @@ backends:
 and finally accessed in the Datadog Agent:
 
 ```yaml
-# /etc/datadog-agent/datadog.yml
-property1: "ENC[MySecretBackend:secret1]"
-property2: "ENC[MySecretBackend:secret2]"
+# /etc/datadog-agent/datadog.yaml
+property1: "ENC[secret1]"
+property2: "ENC[secret2]"
 ```
 
 Multiple secret backends, of the same or different types, can be defined in your `datadog-secret-backend` yaml configuration. As a result, you can leverage multiple supported backends (file.yaml, file.json, aws.ssm, and aws.secrets, azure.keyvault) in your Datadog Agent configuration.
@@ -110,17 +108,16 @@ Each of the following examples will access the secret from the Datadog Agent con
 ## The Datadog API key to associate your Agent's data with your organization.
 ## Create a new API key here: https://app.datadoghq.com/account/settings
 #
-api_key: "ENC[agent_secret:apikey]" 
+api_key: "ENC[apikey]" 
 ```
 
 **Hashicorp Vault Authentication with AppRole**
 
 ```yaml
-# /opt/datadog-secret-backend/datadog-secret-backend.yaml
+# /etc/datadog-agent/datadog.yaml
 ---
-backends:
-  MySecretBackend:
-    backend_type: hashicorp.vault
+  secret_backend_type: hashicorp.vault
+  secret_backend_config:
     vault_address: vault_address: http://myvaultaddress.net
     vault_tls_config:
         # ... TLS settings if applicable
@@ -135,11 +132,10 @@ backends:
 **Hashicorp Vault Authentication with UserPass**
 
 ```yaml
-# /opt/datadog-secret-backend/datadog-secret-backend.yaml
+# /etc/datadog-agent/datadog.yaml
 ---
-backends:
-  MySecretBackend:
-    backend_type: hashicorp.vault
+  secret_backend_type: hashicorp.vault
+  secret_backend_config:
     vault_address: vault_address: http://myvaultaddress.net
     vault_tls_config:
         # ... TLS settings if applicable
@@ -154,11 +150,10 @@ backends:
 **Hashicorp Vault Authentication with LDAP**
 
 ```yaml
-# /opt/datadog-secret-backend/datadog-secret-backend.yaml
+# /etc/datadog-agent/datadog.yaml
 ---
-backends:
-  MySecretBackend:
-    backend_type: hashicorp.vault
+  secret_backend_type: hashicorp.vault
+  secret_backend_config:
     vault_address: vault_address: http://myvaultaddress.net
     vault_tls_config:
         # ... TLS settings if applicable

@@ -72,7 +72,7 @@ api_key: ENC[{parameter_full_path}]
 ```
 
 AWS System Manager Parameter store supports a heirachical model. Parameters can be specified individually using **parameters**, or recursively fetched using a matching
- prefix path with **parameter_path**. For example, assuming a secret with a **backend_id** of `MySecretBackend` and the AWS System Manager Parameter Store paths
+ prefix path with **parameter_path**. For example, assuming the AWS System Manager Parameter Store paths
 
 ```sh
 /DatadogAgent/Production/ParameterKey1 = ParameterStringValue1

@@ -42,10 +42,9 @@ When `force_string: false` is defined, or when the backend setting `force_string
 ### Azure Service Principal With Client Credentials
 ```yaml
 ---
-backends:
-  keyvault1:
+  secret_backend_type: azure.keyvault
+  secret_backend_config:
     secret_id: apikey
-    backend_type: azure.keyvault
     keyvaulturl: "https://my-keyvault.vault.azure.net"
     force_string: true
     azure_session:
@@ -57,10 +56,9 @@ backends:
 ### Azure Service Principal With Certificate and Certificate Password
 ```yaml
 ---
-backends:
-  keyvault1:
+  secret_backend_type: azure.keyvault
+  secret_backend_config:
     secret_id: apikey
-    backend_type: azure.keyvault
     keyvaulturl: "https://my-keyvault.vault.azure.net"
     force_string: true
     azure_session:
@@ -73,10 +71,9 @@ backends:
 ### Azure Service Principal With Certificate Without Certificate Password
 ```yaml
 ---
-backends:
-  keyvault1:
+  secret_backend_type: azure.keyvault
+  secret_backend_config:
     secret_id: apikey
-    backend_type: azure.keyvault
     keyvaulturl: "https://my-keyvault.vault.azure.net"
     force_string: true
     azure_session:
@@ -88,10 +85,9 @@ backends:
 ### Azure Managed Identity
 ```yaml
 ---
-backends:
-  keyvault1:
+  secret_backend_type: azure.keyvault
+  secret_backend_config:
     secret_id: apikey
-    backend_type: azure.keyvault
     keyvaulturl: "https://my-keyvault.vault.azure.net"
 ```
 
