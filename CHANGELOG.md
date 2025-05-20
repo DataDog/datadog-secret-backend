@@ -1,5 +1,9 @@
 # CHANGELOG - datadog-secret-backend
 
+## 0.2.3 / 2025-05-20
+
+* Patching dependabot and code scanning security vulns
+
 ## 0.2.2 / 2025-05-19
 
 * Bump hashicorp/vault/api from `v1.15.0` to `v1.16.0`
