@@ -38,9 +38,8 @@ The backend configuration for Akeyless follows this pattern:
 
 ```yaml
 ---
-backends:
-  akeyless:
-    backend_type: 'akeyless'
+  secret_backend_type: 'akeyless'
+  secret_backend_config:
     akeyless_url: 'https://api.akeyless.io'
     akeyless_session:
       akeyless_access_id: 'abcdef123456**********'

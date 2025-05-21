@@ -37,7 +37,7 @@ func TestVaultBackend(t *testing.T) {
 		"vault_token": token,
 	}
 
-	secretsBackend, err := NewVaultBackend("vault-backend", backendConfig)
+	secretsBackend, err := NewVaultBackend(backendConfig)
 	assert.NoError(t, err)
 
 	secretOutput := secretsBackend.GetSecretOutput("key1")
@@ -69,7 +69,7 @@ func TestVaultBackend_KeyNotFound(t *testing.T) {
 		"vault_token": token,
 	}
 
-	secretsBackend, err := NewVaultBackend("vault-backend", backendConfig)
+	secretsBackend, err := NewVaultBackend(backendConfig)
 	assert.NoError(t, err)
 
 	// Check that the keys are not found.

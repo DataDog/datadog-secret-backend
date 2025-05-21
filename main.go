@@ -42,11 +42,8 @@ func init() {
 
 func main() {
 	program, _ := os.Executable()
-	programPath := filepath.Dir(program)
-	defaultConfigFile := filepath.Join(programPath, "datadog-secret-backend.yaml")
 
 	version := flag.Bool("version", false, "Print the version info")
-	configFile := flag.String("config", defaultConfigFile, "Path to backend configuration yaml")
 
 	flag.Parse()
 
@@ -65,8 +62,9 @@ func main() {
 		log.Fatal().Err(err).Msg("failed to unmarshal input")
 	}
 
-	backends := backend.NewBackends(*configFile)
-	secretOutputs := backends.GetSecretOutputs(inputPayload.Secrets)
+	backend := &backend.Backend{}
+	backend.InitBackend(inputPayload.Type, inputPayload.Config)
+	secretOutputs := backend.GetSecretOutputs(inputPayload.Secrets)
 
 	output, err := json.Marshal(secretOutputs)
 	if err != nil {
