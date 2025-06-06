@@ -24,7 +24,7 @@ import (
 	"github.com/DataDog/datadog-secret-backend/secret"
 )
 
-const appVersion = "0.1.11"
+const appVersion = "1.0.0"
 
 func init() {
 	zerolog.TimestampFunc = func() time.Time {
@@ -63,6 +63,9 @@ func main() {
 	}
 
 	backend := &backend.Backend{}
+	if inputPayload.Config == nil {
+		inputPayload.Config = make(map[string]interface{})
+	}
 	backend.InitBackend(inputPayload.Type, inputPayload.Config)
 	secretOutputs := backend.GetSecretOutputs(inputPayload.Secrets)
 
