@@ -28,16 +28,16 @@ func TestVaultBackend(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Create a new Vault backend.
+	inputSecrets := []string{"key1", "key2"}
 	backendConfig := map[string]interface{}{
 		"vault_address": client.Address(),
 		"secret_path":   "secret/foo",
-		"secrets":       []string{"key1", "key2"},
 		"backend_type":  "hashicorp.vault",
 		// Note: we're not testing the whole "session" part of the backend here as we're using the root token.
 		"vault_token": token,
 	}
 
-	secretsBackend, err := NewVaultBackend(backendConfig)
+	secretsBackend, err := NewVaultBackend(backendConfig, inputSecrets)
 	assert.NoError(t, err)
 
 	secretOutput := secretsBackend.GetSecretOutput("key1")
@@ -60,16 +60,16 @@ func TestVaultBackend_KeyNotFound(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Create a new Vault backend.
+	inputSecrets := []string{"key_noexist"}
 	backendConfig := map[string]interface{}{
 		"vault_address": client.Address(),
 		"secret_path":   "secret/foo",
-		"secrets":       []string{"key_noexist"},
 		"backend_type":  "hashicorp.vault",
 		// Note: we're not testing the whole "session" part of the backend here as we're using the root token.
 		"vault_token": token,
 	}
 
-	secretsBackend, err := NewVaultBackend(backendConfig)
+	secretsBackend, err := NewVaultBackend(backendConfig, inputSecrets)
 	assert.NoError(t, err)
 
 	// Check that the keys are not found.

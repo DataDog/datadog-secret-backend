@@ -40,10 +40,6 @@ The backend configuration for Hashicorp Vault has the following pattern:
       vault_role_id: {roleId}
       # ... additional session settings
     secret_path: /Path/To/Secrets
-    secrets:
-      - secret1
-      - secret2
-      - secret3
 ```
 
 **backend_type** must be set to `hashicorp.vault` and both **secret_path** and **secrets** must be provided in each backend configuration.
@@ -68,9 +64,6 @@ The secrets can be fetched using **parameter_path** with **secrets**:
     vault_tls_config:
         # ... TLS settings if applicable
     secret_path: /Datadog/Production
-    secrets:
-      - secret1
-      - secret2
     vault_session:
       vault_role_id: 123456-************
       vault_secret_id: abcdef-********
@@ -122,8 +115,6 @@ api_key: "ENC[apikey]"
     vault_tls_config:
         # ... TLS settings if applicable
     secret_path: /Datadog/Production
-    secrets:
-      - apikey
     vault_session:
       vault_role_id: 123456-************
       vault_secret_id: abcdef-********
@@ -140,8 +131,6 @@ api_key: "ENC[apikey]"
     vault_tls_config:
         # ... TLS settings if applicable
     secret_path: /Datadog/Production
-    secrets:
-      - apikey
     vault_session:
       vault_username: myuser
       vault_password: mypassword
@@ -158,8 +147,6 @@ api_key: "ENC[apikey]"
     vault_tls_config:
         # ... TLS settings if applicable
     secret_path: /Datadog/Production
-    secrets:
-      - apikey
     vault_session:
       vault_ldap_username: myuser
       vault_ldap_password: mypassword

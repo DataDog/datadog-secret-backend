@@ -46,9 +46,6 @@ The following `vault_session` settings are available:
     vault_tls_config:
         # ... TLS settings if applicable
     secret_path: /Datadog/Production
-    secrets:
-      - secret1
-      - secret2
     vault_session:
       vault_role_id: 123456-************
       vault_secret_id: abcdef-********
@@ -64,9 +61,6 @@ The following `vault_session` settings are available:
     vault_tls_config:
         # ... TLS settings if applicable
     secret_path: /Datadog/Production
-    secrets:
-      - secret1
-      - secret2
     vault_session:
       vault_username: myuser
       vault_password: mypassword
@@ -83,9 +77,6 @@ The following `vault_session` settings are available:
     vault_tls_config:
         # ... TLS settings if applicable
     secret_path: /Datadog/Production
-    secrets:
-      - secret1
-      - secret2
     vault_session:
       vault_ldap_username: myuser
       vault_ldap_password: mypassword

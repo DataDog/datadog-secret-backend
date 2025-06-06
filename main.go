@@ -66,7 +66,7 @@ func main() {
 	if inputPayload.Config == nil {
 		inputPayload.Config = make(map[string]interface{})
 	}
-	backend.InitBackend(inputPayload.Type, inputPayload.Config)
+	backend.InitBackend(inputPayload.Type, inputPayload.Config, inputPayload.Secrets)
 	secretOutputs := backend.GetSecretOutputs(inputPayload.Secrets)
 
 	output, err := json.Marshal(secretOutputs)

@@ -24,7 +24,6 @@ type VaultBackendConfig struct {
 	BackendType  string                    `mapstructure:"backend_type"`
 	VaultAddress string                    `mapstructure:"vault_address"`
 	SecretPath   string                    `mapstructure:"secret_path"`
-	Secrets      []string                  `mapstructure:"secrets"`
 	VaultTLS     *VaultTLSConfig           `mapstructure:"vault_tls_config"`
 }
 
@@ -45,7 +44,7 @@ type VaultBackend struct {
 }
 
 // NewVaultBackend returns a new backend for Hashicorp vault
-func NewVaultBackend(bc map[string]interface{}) (*VaultBackend, error) {
+func NewVaultBackend(bc map[string]interface{}, inputSecrets []string) (*VaultBackend, error) {
 	backendConfig := VaultBackendConfig{}
 	err := mapstructure.Decode(bc, &backendConfig)
 	if err != nil {
@@ -115,8 +114,8 @@ func NewVaultBackend(bc map[string]interface{}) (*VaultBackend, error) {
 	secretValue := make(map[string]string, 0)
 
 	if backendConfig.SecretPath != "" {
-		if len(backendConfig.Secrets) > 0 {
-			for _, item := range backendConfig.Secrets {
+		if len(inputSecrets) > 0 {
+			for _, item := range inputSecrets {
 				if data, ok := secret.Data[item]; ok {
 					secretValue[item] = data.(string)
 				}
@@ -140,7 +139,6 @@ func (b *VaultBackend) GetSecretOutput(secretKey string) secret.Output {
 
 	log.Error().
 		Str("backend_type", b.Config.BackendType).
-		Strs("secrets", b.Config.Secrets).
 		Str("secret_path", b.Config.SecretPath).
 		Str("secret_key", secretKey).
 		Msg("failed to retrieve secrets")

@@ -29,7 +29,7 @@ type Backend struct {
 }
 
 // InitBackend initialize the backend based on their configuration
-func (b *Backend) InitBackend(backendType string, backendConfig map[string]interface{}) {
+func (b *Backend) InitBackend(backendType string, backendConfig map[string]interface{}, backendSecrets []string) {
 	backendConfig["backend_type"] = backendType
 	switch backendType {
 	case "aws.secrets":
@@ -54,7 +54,7 @@ func (b *Backend) InitBackend(backendType string, backendConfig map[string]inter
 			b.Backend = backend
 		}
 	case "hashicorp.vault":
-		backend, err := hashicorp.NewVaultBackend(backendConfig)
+		backend, err := hashicorp.NewVaultBackend(backendConfig, backendSecrets)
 		if err != nil {
 			b.Backend = NewErrorBackend(err)
 		} else {
