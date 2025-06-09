@@ -13,6 +13,7 @@
 | secrets | List of individual Vault secrets |
 | vault_address | DNS/IP of the Hashicorp Vault system |
 | vault_tls_config | TLS Configuration to access the Vault system |
+| vault_session | Authentication configuration to access the Vault system |
 
 ### TLS Settings
 
@@ -37,47 +38,30 @@ The backend configuration for Hashicorp Vault has the following pattern:
     vault_tls_config:
         # ... TLS settings if applicable
     vault_session:
-      vault_role_id: {roleId}
+      vault_auth_type: aws
       # ... additional session settings
     secret_path: /Path/To/Secrets
 ```
 
-**backend_type** must be set to `hashicorp.vault` and both **secret_path** and **secrets** must be provided in each backend configuration.
+**backend_type** must be set to `hashicorp.vault`.
 
 The backend secret is referenced in your Datadog Agent configuration files using the **ENC** notation.
 
 ```yaml
 # /etc/datadog-agent/datadog.yaml
 
-api_key: "ENC[{secret]"
+api_key: "ENC[{secret}]"
 
+secret_backend_type: hashicorp.vault
+secret_backend_config:
+  vault_address: vault_address: http://myvaultaddress.net
+  vault_tls_config:
+      # ... TLS settings if applicable
+  secret_path: /Datadog/Production
+  vault_session:
+    vault_role_id: 123456-************
+    vault_secret_id: abcdef-********
 ```
-
-The secrets can be fetched using **parameter_path** with **secrets**:
-
-```yaml
-# /etc/datadog-agent/datadog.yaml
----
-  secret_backend_type: hashicorp.vault
-  secret_backend_config:
-    vault_address: vault_address: http://myvaultaddress.net
-    vault_tls_config:
-        # ... TLS settings if applicable
-    secret_path: /Datadog/Production
-    vault_session:
-      vault_role_id: 123456-************
-      vault_secret_id: abcdef-********
-```
-
-and finally accessed in the Datadog Agent:
-
-```yaml
-# /etc/datadog-agent/datadog.yaml
-property1: "ENC[secret1]"
-property2: "ENC[secret2]"
-```
-
-Multiple secret backends, of the same or different types, can be defined in your `datadog-secret-backend` yaml configuration. As a result, you can leverage multiple supported backends (file.yaml, file.json, aws.ssm, and aws.secrets, azure.keyvault) in your Datadog Agent configuration.
 
 ## Configuration Examples
 
@@ -104,7 +88,7 @@ Each of the following examples will access the secret from the Datadog Agent con
 api_key: "ENC[apikey]" 
 ```
 
-**Hashicorp Vault Authentication with AppRole**
+### Hashicorp Vault Authentication with AWS Instance Profile
 
 ```yaml
 # /etc/datadog-agent/datadog.yaml
@@ -112,42 +96,9 @@ api_key: "ENC[apikey]"
   secret_backend_type: hashicorp.vault
   secret_backend_config:
     vault_address: vault_address: http://myvaultaddress.net
-    vault_tls_config:
-        # ... TLS settings if applicable
     secret_path: /Datadog/Production
     vault_session:
-      vault_role_id: 123456-************
-      vault_secret_id: abcdef-********
-```
-
-**Hashicorp Vault Authentication with UserPass**
-
-```yaml
-# /etc/datadog-agent/datadog.yaml
----
-  secret_backend_type: hashicorp.vault
-  secret_backend_config:
-    vault_address: vault_address: http://myvaultaddress.net
-    vault_tls_config:
-        # ... TLS settings if applicable
-    secret_path: /Datadog/Production
-    vault_session:
-      vault_username: myuser
-      vault_password: mypassword
-```
-
-**Hashicorp Vault Authentication with LDAP**
-
-```yaml
-# /etc/datadog-agent/datadog.yaml
----
-  secret_backend_type: hashicorp.vault
-  secret_backend_config:
-    vault_address: vault_address: http://myvaultaddress.net
-    vault_tls_config:
-        # ... TLS settings if applicable
-    secret_path: /Datadog/Production
-    vault_session:
-      vault_ldap_username: myuser
-      vault_ldap_password: mypassword
+      vault_auth_type: aws
+      vault_aws_role: Name-of-IAM-role-attached-to-machine
+      aws_region: us-east-1
 ```
