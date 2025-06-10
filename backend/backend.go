@@ -10,7 +10,6 @@ package backend
 import (
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/rs/zerolog/log"
 	yaml "gopkg.in/yaml.v2"
@@ -144,11 +143,9 @@ func (b *Backends) InitBackend(backendID string, config map[string]interface{}) 
 func (b *Backends) GetSecretOutputs(secrets []string) map[string]secret.Output {
 	secretOutputs := make(map[string]secret.Output, 0)
 
-	for _, s := range secrets {
-		segments := strings.SplitN(s, ":", 2)
-		backendID := segments[0]
-		secretKey := segments[1]
-
+	for _, secretKey := range secrets {
+		// NOTE: This variable will be removed by this PR: https://github.com/DataDog/datadog-secret-backend/pull/41
+		backendID := ""
 		if _, ok := b.Backends[backendID]; !ok {
 			log.Error().Str("backend_id", backendID).Str("secret_key", secretKey).
 				Msg("undefined backend")
@@ -158,7 +155,7 @@ func (b *Backends) GetSecretOutputs(secrets []string) map[string]secret.Output {
 				Error:     fmt.Errorf("undefined backend"),
 			}
 		}
-		secretOutputs[s] = b.Backends[backendID].GetSecretOutput(secretKey)
+		secretOutputs[secretKey] = b.Backends[backendID].GetSecretOutput(secretKey)
 	}
 	return secretOutputs
 }

@@ -13,8 +13,8 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/Azure/azure-sdk-for-go/services/keyvault/v7.1/keyvault"
-	"github.com/Azure/go-autorest/autorest"
+	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
+	"github.com/Azure/azure-sdk-for-go/sdk/security/keyvault/azsecrets"
 	"github.com/DataDog/datadog-secret-backend/secret"
 	"github.com/mitchellh/mapstructure"
 	log "github.com/sirupsen/logrus"
@@ -24,15 +24,19 @@ import (
 // As the AWS SDK doesn't provide a real mock, we'll have to make our own that
 // matches this interface
 type keyvaultClient interface {
-	GetSecret(ctx context.Context, vaultBaseURL string, secretName string, secretVersion string) (result keyvault.SecretBundle, err error)
+	GetSecret(ctx context.Context, secretID string, secretVersion string, opt *azsecrets.GetSecretOptions) (result azsecrets.GetSecretResponse, err error)
 }
 
 // getKeyvaultClient is a variable that holds the function to create a new keyvaultClient
 // it will be overwritten in tests
-var getKeyvaultClient = func(cfg *autorest.Authorizer) keyvaultClient {
-	client := keyvault.New()
-	if cfg != nil {
-		client.Authorizer = *cfg
+var getKeyvaultClient = func(keyVaultURL string) keyvaultClient {
+	cred, err := azidentity.NewDefaultAzureCredential(nil)
+	if err != nil {
+		log.Errorf("getting default credentials: %s", err)
+	}
+	client, err := azsecrets.NewClient(keyVaultURL, cred, nil)
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
 	}
 	return client
 }
@@ -62,19 +66,10 @@ func NewKeyVaultBackend(backendID string, bc map[string]interface{}) (*KeyVaultB
 		return nil, err
 	}
 
-	var cfg *autorest.Authorizer
-	if backendConfig.Session != nil {
-		cfg, err = NewConfigFromBackendConfig(*backendConfig.Session)
-		if err != nil {
-			log.WithFields(log.Fields{
-				"backend_id": backendID,
-			}).WithError(err).Error("failed to initialize Azure session")
-			return nil, err
-		}
-	}
-	client := getKeyvaultClient(cfg)
+	client := getKeyvaultClient(backendConfig.KeyVaultURL)
 
-	out, err := client.GetSecret(context.Background(), backendConfig.KeyVaultURL, backendConfig.SecretID, "")
+	version := ""
+	out, err := client.GetSecret(context.Background(), backendConfig.SecretID, version, nil)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"backend_id":   backendID,
