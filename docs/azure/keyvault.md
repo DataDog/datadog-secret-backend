@@ -19,15 +19,15 @@ The backend configuration for Azure Key Vault secrets has the following pattern:
 
 ```yaml
 ---
-  secret_backend_type: azure.keyvault
-  secret_backend_config:
-    keyvaulturl: https://mykeyvault.vault.azure.net
-    # interpret contents of secret as string
-    force_string: [true|false]
-    azure_session:
-      azure_client_id: {clientId}
-      # ... additional session settings
-    secret_id: {secretId}
+secret_backend_type: azure.keyvault
+secret_backend_config:
+  keyvaulturl: https://mykeyvault.vault.azure.net
+  # interpret contents of secret as string
+  force_string: [true|false]
+  azure_session:
+    azure_client_id: {clientId}
+    # ... additional session settings
+  secret_id: {secretId}
 ```
 
 **backend_type** must be set to `azure.keyvault` and **secret_id** must be set to your target Azure Key Vault secret name.
@@ -58,17 +58,16 @@ This will allow for generating simple string values with or without JSON parsing
 ```yaml
 # /etc/datadog-agent/datadog.yaml
 ---
-
-  secret_backend_type: azure.keyvault
-  secret_backend_config:
-    secret_id: my_azure_secret_id
-    keyvaulturl: https://mykeyvault.vault.azure.net
-    # interpret contents of secret as string
-    force_string: true
-    azure_session:
-      azure_tenant_id: abcdef-*****
-      azure_client_id: 123456-*****
-      azure_client_secret: ************
+secret_backend_type: azure.keyvault
+secret_backend_config:
+  secret_id: my_azure_secret_id
+  keyvaulturl: https://mykeyvault.vault.azure.net
+  # interpret contents of secret as string
+  force_string: true
+  azure_session:
+    azure_tenant_id: abcdef-*****
+    azure_client_id: 123456-*****
+    azure_client_secret: ************
 ```
 
 ```yaml
@@ -113,16 +112,16 @@ api_key: "ENC[ddapikey]"
 ```yaml
 # /etc/datadog-agent/datadog.yaml
 ---
-  secret_backend_type: azure.keyvault
-  secret_backend_config:
-    secret_id: my_azure_secret_id
-    keyvaulturl: https://mykeyvault.vault.azure.net
-    # interpret contents of secret as string
-    force_string: true
-    azure_session:
-      azure_tenant_id: abcdef-*****
-      azure_client_id: 123456-*****
-      azure_client_secret: ************
+secret_backend_type: azure.keyvault
+secret_backend_config:
+  secret_id: my_azure_secret_id
+  keyvaulturl: https://mykeyvault.vault.azure.net
+  # interpret contents of secret as string
+  force_string: true
+  azure_session:
+    azure_tenant_id: abcdef-*****
+    azure_client_id: 123456-*****
+    azure_client_secret: ************
 ```
 
 **Azure Service Principal With Client Certificate Without Password Protection**
@@ -130,16 +129,16 @@ api_key: "ENC[ddapikey]"
 ```yaml
 # /etc/datadog-agent/datadog.yaml
 ---
-  secret_backend_type: azure.keyvault
-  secret_backend_config:
-    secret_id: my_azure_secret_id
-    keyvaulturl: https://mykeyvault.vault.azure.net
-    # interpret contents of secret as string
-    force_string: true
-    azure_session:
-      azure_tenant_id: abcdef-*****
-      azure_client_id: 123456-*****
-      azure_certificate_path: /path/to/cert.pfx
+secret_backend_type: azure.keyvault
+secret_backend_config:
+  secret_id: my_azure_secret_id
+  keyvaulturl: https://mykeyvault.vault.azure.net
+  # interpret contents of secret as string
+  force_string: true
+  azure_session:
+    azure_tenant_id: abcdef-*****
+    azure_client_id: 123456-*****
+    azure_certificate_path: /path/to/cert.pfx
 ```
 
 **Azure Service Principal With Client Certificate With Password Protection**
@@ -147,17 +146,17 @@ api_key: "ENC[ddapikey]"
 ```yaml
 # /etc/datadog-agent/datadog.yaml
 ---
-  secret_backend_type: azure.keyvault
-  secret_backend_config:
-    secret_id: my_azure_secret_id
-    keyvaulturl: https://mykeyvault.vault.azure.net
-    # interpret contents of secret as string
-    force_string: true
-    azure_session:
-      azure_tenant_id: abcdef-*****
-      azure_client_id: 123456-*****
-      azure_certificate_path: /path/to/cert.pfx
-      azure_certificate_password: mycertificatepassword
+secret_backend_type: azure.keyvault
+secret_backend_config:
+  secret_id: my_azure_secret_id
+  keyvaulturl: https://mykeyvault.vault.azure.net
+  # interpret contents of secret as string
+  force_string: true
+  azure_session:
+    azure_tenant_id: abcdef-*****
+    azure_client_id: 123456-*****
+    azure_certificate_path: /path/to/cert.pfx
+    azure_certificate_password: mycertificatepassword
 ```
 
 **Azure Managed Identity**
@@ -165,8 +164,8 @@ api_key: "ENC[ddapikey]"
 ```yaml
 # /etc/datadog-agent/datadog.yaml
 ---
-  secret_backend_type: azure.keyvault
-  secret_backend_config:
-    secret_id: my_azure_secret_id
-    keyvaulturl: https://mykeyvault.vault.azure.net
+secret_backend_type: azure.keyvault
+secret_backend_config:
+  secret_id: my_azure_secret_id
+  keyvaulturl: https://mykeyvault.vault.azure.net
 ```
