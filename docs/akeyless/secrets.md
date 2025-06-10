@@ -25,12 +25,12 @@ The backend configuration for Akeyless follows this pattern:
 
 ```yaml
 ---
-  secret_backend_type: 'akeyless'
-  secret_backend_config:
-    akeyless_url: 'https://api.akeyless.io'
-    akeyless_session:
-      akeyless_access_id: 'abcdef123456**********'
-      akeyless_access_key: 'abcdef123456**********'
+secret_backend_type: 'akeyless'
+secret_backend_config:
+  akeyless_url: 'https://api.akeyless.io'
+  akeyless_session:
+    akeyless_access_id: 'abcdef123456**********'
+    akeyless_access_key: 'abcdef123456**********'
 ```
 
 **backend_type** must be set to `akeyless` and both **akeyless_access_id** and **akeyless_access_key** must be provided in each backend configuration.
@@ -75,12 +75,12 @@ api_key: "ENC[/secret-folder/datadog-sample-key]"
 ```yaml
 # /etc/datadog-agent/datadog.yaml
 ---
-  secret_backend_type: 'akeyless'
-  secret_backend_config:
-    akeyless_url: 'https://api.akeyless.io'
-    akeyless_session:
-      akeyless_access_id: 'abcdef123456**********'
-      akeyless_access_key: 'abcdef123456**********'
+secret_backend_type: 'akeyless'
+secret_backend_config:
+  akeyless_url: 'https://api.akeyless.io'
+  akeyless_session:
+    akeyless_access_id: 'abcdef123456**********'
+    akeyless_access_key: 'abcdef123456**********'
 ```
 
 Multiple secret backends, of the same or different types, can be defined in your `datadog-secret-backend` yaml configuration. As a result, you can leverage multiple supported backends (file.yaml, file.json, aws.ssm, and aws.secrets, azure.keyvault) in your Datadog Agent configuration.

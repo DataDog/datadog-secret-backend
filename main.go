@@ -62,7 +62,7 @@ func main() {
 		log.Fatal().Err(err).Msg("failed to unmarshal input")
 	}
 
-	backend := &backend.Backend{}
+	backend := &backend.GenericConnector{}
 	if inputPayload.Config == nil {
 		inputPayload.Config = make(map[string]interface{})
 	}

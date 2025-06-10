@@ -17,9 +17,9 @@ The backend configuration for JSON file secrets has the following pattern:
 
 ```yaml
 ---
-  secret_backend_type: file.yaml
-  secret_backend_config:
-    file_path: /path/to/yaml/file
+secret_backend_type: file.yaml
+secret_backend_config:
+  file_path: /path/to/yaml/file
 ```
 
 The backend secret is referenced in your Datadog Agent configuration files using the **ENC** notation.
@@ -60,7 +60,7 @@ api_key: "ENC[api_key]"
 ```yaml
 # /etc/datadog-agent/datadog.yaml
 ---
-  secret_backend_type: file.yaml
-  secret_backend_config:
-    file_path: /opt/production-secrets/secrets.yaml
+secret_backend_type: file.yaml
+secret_backend_config:
+  file_path: /opt/production-secrets/secrets.yaml
 ```

@@ -32,15 +32,15 @@ The backend configuration for Hashicorp Vault has the following pattern:
 
 ```yaml
 ---
-  secret_backend_type: hashicorp.vault
-  secret_backend_config:
-    vault_address: http://myvaultaddress.net
-    vault_tls_config:
-        # ... TLS settings if applicable
-    vault_session:
-      vault_auth_type: aws
-      # ... additional session settings
-    secret_path: /Path/To/Secrets
+secret_backend_type: hashicorp.vault
+secret_backend_config:
+  vault_address: http://myvaultaddress.net
+  vault_tls_config:
+      # ... TLS settings if applicable
+  vault_session:
+    vault_auth_type: aws
+    # ... additional session settings
+  secret_path: /Path/To/Secrets
 ```
 
 **backend_type** must be set to `hashicorp.vault`.
@@ -93,12 +93,12 @@ api_key: "ENC[apikey]"
 ```yaml
 # /etc/datadog-agent/datadog.yaml
 ---
-  secret_backend_type: hashicorp.vault
-  secret_backend_config:
-    vault_address: vault_address: http://myvaultaddress.net
-    secret_path: /Datadog/Production
-    vault_session:
-      vault_auth_type: aws
-      vault_aws_role: Name-of-IAM-role-attached-to-machine
-      aws_region: us-east-1
+secret_backend_type: hashicorp.vault
+secret_backend_config:
+  vault_address: vault_address: http://myvaultaddress.net
+  secret_path: /Datadog/Production
+  vault_session:
+    vault_auth_type: aws
+    vault_aws_role: Name-of-IAM-role-attached-to-machine
+    aws_region: us-east-1
 ```

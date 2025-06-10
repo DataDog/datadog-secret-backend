@@ -80,14 +80,14 @@ The following `vault_session` settings are available:
 ```yaml
 # /etc/datadog-agent/datadog.yaml
 ---
-  secret_backend_type: hashicorp.vault
-  secret_backend_config:
-    vault_address: vault_address: http://myvaultaddress.net
-    secret_path: /Datadog/Production
-    vault_session:
-      vault_auth_type: aws
-      vault_aws_role: Name-of-IAM-role-attached-to-machine
-      aws_region: us-east-1
+secret_backend_type: hashicorp.vault
+secret_backend_config:
+  vault_address: vault_address: http://myvaultaddress.net
+  secret_path: /Datadog/Production
+  vault_session:
+    vault_auth_type: aws
+    vault_aws_role: Name-of-IAM-role-attached-to-machine
+    aws_region: us-east-1
 ```
 
 Review the [hashicorp.vault](vault.md) backend documentation examples of configurations for Datadog Agent secrets.

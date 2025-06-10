@@ -49,8 +49,8 @@ The backend configuration for AWS SSM Parameter Store secrets has the following 
 
 ```yaml
 ---
- secret_backend_type: aws.ssm
- secret_backend_config:
+secret_backend_type: aws.ssm
+secret_backend_config:
   parameters: 
     - /DatadogAgent/Production/ParameterKey1
     - /DatadogAgent/Production/ParameterKey2
@@ -85,8 +85,8 @@ The parameters can be fetched using **parameter_path**:
 ```yaml
 # /etc/datadog-agent/datadog.yaml
 ---
- secret_backend_type: aws.ssm
- secret_backend_config:
+secret_backend_type: aws.ssm
+secret_backend_config:
   parameter_path: /DatadogAgent/Production
   aws_session:
     aws_region: us-east-1
@@ -97,8 +97,8 @@ or fetched using **parameters**:
 ```yaml
 # /etc/datadog-agent/datadog.yaml
 ---
- secret_backend_type: aws.ssm
- secret_backend_config:
+secret_backend_type: aws.ssm
+secret_backend_config:
   parameters: 
     - /DatadogAgent/Production/ParameterKey1
     - /DatadogAgent/Production/ParameterKey2
@@ -150,9 +150,9 @@ api_key: "ENC[/DatadogAgent/Production/api_key]"
 ```yaml
 # /etc/datadog-agent/datadog.yaml
 ---
- secret_backend_type: aws.ssm
- secret_backend_config:
-  parameter_path: /DatadogAgent/Production
-  aws_session:
-    aws_region: us-east-1
+secret_backend_type: aws.ssm
+secret_backend_config:
+parameter_path: /DatadogAgent/Production
+aws_session:
+  aws_region: us-east-1
 ```

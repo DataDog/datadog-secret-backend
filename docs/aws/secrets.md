@@ -44,11 +44,11 @@ The backend configuration for AWS Secrets Manager secrets has the following patt
 
 ```yaml
 ---
-  secret_backend_type: aws.secrets
-  secret_backend_config:
-    aws_session:
-      aws_region: {regionName}
-    secret_id: {secretId}
+secret_backend_type: aws.secrets
+secret_backend_config:
+  aws_session:
+    aws_region: {regionName}
+  secret_id: {secretId}
 
 ```
 
@@ -78,8 +78,8 @@ AWS Secrets Manager can hold multiple secret keys and values. A backend configur
 ```yaml
 # /etc/datadog-agent/datadog.yaml
 ---
- secret_backend_type: aws.secrets
- secret_backend_config:
+secret_backend_type: aws.secrets
+secret_backend_config:
   secret_id: My-Secret-Backend-Secret
   aws_session:
     aws_region: us-east-1
@@ -126,8 +126,8 @@ api_key: ENC[api_key]
 ```yaml
 # /etc/datadog-agent/datadog.yaml
 ---
- secret_backend_type: aws.secrets
- secret_backend_config:
+secret_backend_type: aws.secrets
+secret_backend_config:
   secret_id: /DatadogAgent/Production
   aws_session:
     aws_region: us-east-1
