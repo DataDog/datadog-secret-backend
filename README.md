@@ -4,6 +4,13 @@
 
 > **datadog-secret-backend** is an implementation of the [Datadog Agent Secrets Management](https://docs.datadoghq.com/agent/guide/secrets-management/?tab=linux) executable supporting multiple backend secret providers.
 
+**IMPORTANT NOTE**: We have made BREAKING changes to this repo in the main branch. 
+
+1. We are only supported one backend type being configured (this is why specifying backendID is no longer needed)
+2. The backend config is being written to stdin by the Datadog Agent, so any yaml file (except for the `datadog.yaml` file used to configure your Agent) won't be considered.
+
+To create a standalone executable from this repository, please switch to the `v0` branch, and follow the README instructions in that branch. Read the main branch's README if you wish for Datadog to handle the pulling of secrets automatically.
+
 ## Supported Backends
 
 | Backend | Provider | Description |
@@ -17,7 +24,7 @@
 
 ## Installation
 
-This executable is now shipped along with the Datadog Agent in agent versions >=7.67. All you need to do to use this feature with one of the supported backends is [provide a configuration](https://github.com/DataDog/datadog-secret-backend/blob/main/datadog-secret-backend.yaml.example) for the secrets executable. Documentation for each supported provider can be found [here](https://github.com/DataDog/datadog-secret-backend/tree/main/docs).
+This executable is now shipped along with the Datadog Agent in agent versions >=7.69. All you need to do to use this feature with one of the supported backends is [provide a configuration](https://github.com/DataDog/datadog-secret-backend/blob/main/datadog-secret-backend.yaml.example) for the secrets executable.
 
 ## Usage
 

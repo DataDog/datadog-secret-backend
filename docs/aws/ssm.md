@@ -62,7 +62,7 @@ secret_backend_config:
 
 **secret_backend_type** must be set to `aws.ssm` and either or both of **parameter_path** and **parameters** must be provided in each backend configuration.
 
-The backend secret is referenced in your Datadog Agent configuration files using the **ENC** notation.
+The backend secret is referenced in your Datadog Agent configuration file using the **ENC** notation.
 
 ```yaml
 # /etc/datadog-agent/datadog.yaml

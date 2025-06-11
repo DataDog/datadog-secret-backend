@@ -32,7 +32,7 @@ secret_backend_config:
 
 **backend_type** must be set to `azure.keyvault` and **secret_id** must be set to your target Azure Key Vault secret name.
 
-The backend secret is referenced in your Datadog Agent configuration files using the **ENC** notation.
+The backend secret is referenced in your Datadog Agent configuration file using the **ENC** notation.
 
 ```yaml
 # /etc/datadog-agent/datadog.yaml

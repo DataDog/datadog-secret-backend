@@ -35,7 +35,7 @@ secret_backend_config:
 
 **backend_type** must be set to `akeyless` and both **akeyless_access_id** and **akeyless_access_key** must be provided in each backend configuration.
 
-The backend secret is referenced in your Datadog Agent configuration files using the **ENC** notation.
+The backend secret is referenced in your Datadog Agent configuration file using the **ENC** notation.
 
 ```yaml
 # /etc/datadog-agent/datadog.yaml

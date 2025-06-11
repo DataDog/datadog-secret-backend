@@ -11,7 +11,7 @@ The `datadog-secret-backend` utility currently supports the following Hashicorp 
 
 ## Akeyless Session
 
-Akeyless requires authentication to access secrets. This module utilizes Akeyless access IDs and access keys for authentication. You'll configure these credentials within the Datadog Secret Backend configuration file.
+Akeyless requires authentication to access secrets. This module utilizes Akeyless access IDs and access keys for authentication.
 
 
 ## Akeyless Session Settings

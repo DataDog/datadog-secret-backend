@@ -22,7 +22,7 @@ secret_backend_config:
   file_path: /path/to/yaml/file
 ```
 
-The backend secret is referenced in your Datadog Agent configuration files using the **ENC** notation.
+The backend secret is referenced in your Datadog Agent configuration file using the **ENC** notation.
 
 ```yaml
 # /etc/datadog-agent/datadog.yaml

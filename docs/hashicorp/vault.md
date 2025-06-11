@@ -45,7 +45,7 @@ secret_backend_config:
 
 **backend_type** must be set to `hashicorp.vault`.
 
-The backend secret is referenced in your Datadog Agent configuration files using the **ENC** notation.
+The backend secret is referenced in your Datadog Agent configuration file using the **ENC** notation.
 
 ```yaml
 # /etc/datadog-agent/datadog.yaml
