@@ -41,6 +41,7 @@ When `force_string: false` is defined, or when the backend setting `force_string
 
 ### Azure Service Principal With Client Credentials
 ```yaml
+# /etc/datadog-agent/datadog.yaml
 ---
 secret_backend_type: azure.keyvault
 secret_backend_config:
@@ -55,6 +56,7 @@ secret_backend_config:
 
 ### Azure Service Principal With Certificate and Certificate Password
 ```yaml
+# /etc/datadog-agent/datadog.yaml
 ---
 secret_backend_type: azure.keyvault
 secret_backend_config:
@@ -70,6 +72,7 @@ secret_backend_config:
 
 ### Azure Service Principal With Certificate Without Certificate Password
 ```yaml
+# /etc/datadog-agent/datadog.yaml
 ---
 secret_backend_type: azure.keyvault
 secret_backend_config:
@@ -84,6 +87,7 @@ secret_backend_config:
 
 ### Azure Managed Identity
 ```yaml
+# /etc/datadog-agent/datadog.yaml
 ---
 secret_backend_type: azure.keyvault
 secret_backend_config:

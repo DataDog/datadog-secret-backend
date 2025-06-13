@@ -18,6 +18,7 @@
 The backend configuration for Azure Key Vault secrets has the following pattern:
 
 ```yaml
+# /etc/datadog-agent/datadog.yaml
 ---
 secret_backend_type: azure.keyvault
 secret_backend_config:

@@ -48,6 +48,7 @@ Ensure that you have followed the instructions specified in the general [aws REA
 The backend configuration for AWS SSM Parameter Store secrets has the following pattern:
 
 ```yaml
+# /etc/datadog-agent/datadog.yaml
 ---
 secret_backend_type: aws.ssm
 secret_backend_config:

@@ -43,6 +43,7 @@ Ensure that you have followed the instructions specified in the general [aws REA
 The backend configuration for AWS Secrets Manager secrets has the following pattern:
 
 ```yaml
+# /etc/datadog-agent/datadog.yaml
 ---
 secret_backend_type: aws.secrets
 secret_backend_config:

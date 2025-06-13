@@ -37,6 +37,7 @@ The `akeyless_session` section defines the credentials used to authenticate with
 The backend configuration for Akeyless follows this pattern:
 
 ```yaml
+# /etc/datadog-agent/datadog.yaml
 ---
 secret_backend_type: 'akeyless'
 secret_backend_config:

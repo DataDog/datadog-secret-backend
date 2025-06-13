@@ -69,6 +69,7 @@ When handling single strings, the backend configuration setting `force_string: t
 
 ### AWS IAM User Access Key for an SSM parameter in us-east-1
 ```yaml
+# /etc/datadog-agent/datadog.yaml
 ---
 secret_backend_type: aws.ssm
 secret_backend_config:
@@ -82,6 +83,7 @@ secret_backend_config:
 
 ### AWS Credential Provider Profile for a Secrets Manager secret in us-east-1
 ```yaml
+# /etc/datadog-agent/datadog.yaml
 ---
 secret_backend_type: aws.secrets
 secret_backend_config:

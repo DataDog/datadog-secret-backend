@@ -16,6 +16,7 @@
 The backend configuration for JSON file secrets has the following pattern:
 
 ```yaml
+# /etc/datadog-agent/datadog.yaml
 ---
 secret_backend_type: file.json
 secret_backend_config:

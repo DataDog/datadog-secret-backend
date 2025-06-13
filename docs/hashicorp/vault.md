@@ -31,6 +31,7 @@
 The backend configuration for Hashicorp Vault has the following pattern:
 
 ```yaml
+# /etc/datadog-agent/datadog.yaml
 ---
 secret_backend_type: hashicorp.vault
 secret_backend_config:
