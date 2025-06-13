@@ -52,13 +52,12 @@ type KeyVaultBackendConfig struct {
 
 // KeyVaultBackend is a backend to fetch secrets from Azure
 type KeyVaultBackend struct {
-	BackendID string
-	Config    KeyVaultBackendConfig
-	Secret    map[string]string
+	Config KeyVaultBackendConfig
+	Secret map[string]string
 }
 
 // NewKeyVaultBackend returns a new backend for Azure
-func NewKeyVaultBackend(backendID string, bc map[string]interface{}) (*KeyVaultBackend, error) {
+func NewKeyVaultBackend(bc map[string]interface{}) (*KeyVaultBackend, error) {
 	backendConfig := KeyVaultBackendConfig{}
 	err := mapstructure.Decode(bc, &backendConfig)
 	if err != nil {
@@ -72,7 +71,6 @@ func NewKeyVaultBackend(backendID string, bc map[string]interface{}) (*KeyVaultB
 	out, err := client.GetSecret(context.Background(), backendConfig.SecretID, version, nil)
 	if err != nil {
 		log.WithFields(log.Fields{
-			"backend_id":   backendID,
 			"backend_type": backendConfig.BackendType,
 			"secret_id":    backendConfig.SecretID,
 			"keyvaulturl":  backendConfig.KeyVaultURL,
@@ -103,9 +101,8 @@ func NewKeyVaultBackend(backendID string, bc map[string]interface{}) (*KeyVaultB
 	}
 
 	backend := &KeyVaultBackend{
-		BackendID: backendID,
-		Config:    backendConfig,
-		Secret:    secretValue,
+		Config: backendConfig,
+		Secret: secretValue,
 	}
 	return backend, nil
 }
@@ -118,7 +115,6 @@ func (b *KeyVaultBackend) GetSecretOutput(secretKey string) secret.Output {
 	es := secret.ErrKeyNotFound.Error()
 
 	log.WithFields(log.Fields{
-		"backend_id":   b.BackendID,
 		"backend_type": b.Config.BackendType,
 		"secret_id":    b.Config.SecretID,
 		"keyvaulturl":  b.Config.KeyVaultURL,
