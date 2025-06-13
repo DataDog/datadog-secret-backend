@@ -24,7 +24,7 @@ import (
 	"github.com/DataDog/datadog-secret-backend/secret"
 )
 
-const appVersion = "1.0.0"
+var appVersion = "dev"
 
 func init() {
 	zerolog.TimestampFunc = func() time.Time {
@@ -48,7 +48,7 @@ func main() {
 	flag.Parse()
 
 	if *version {
-		fmt.Fprintf(os.Stdout, "%s v%s\n", filepath.Base(program), appVersion)
+		fmt.Fprintf(os.Stdout, "%s %s\n", filepath.Base(program), appVersion)
 		os.Exit(0)
 	}
 
