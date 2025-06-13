@@ -10,8 +10,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/Azure/azure-sdk-for-go/services/keyvault/v7.1/keyvault"
-	"github.com/Azure/go-autorest/autorest"
+	"github.com/Azure/azure-sdk-for-go/sdk/security/keyvault/azsecrets"
 	"github.com/DataDog/datadog-secret-backend/secret"
 	"github.com/stretchr/testify/assert"
 )
@@ -22,15 +21,18 @@ type keyvaultMockClient struct {
 	secrets map[string]interface{}
 }
 
-func (c *keyvaultMockClient) GetSecret(_ context.Context, _ string, secretName string, _ string) (result keyvault.SecretBundle, err error) {
+func (c *keyvaultMockClient) GetSecret(_ context.Context, secretName string, _ string, _ *azsecrets.GetSecretOptions) (result azsecrets.GetSecretResponse, err error) {
 	if _, ok := c.secrets[secretName]; ok {
 		val := c.secrets[secretName].(string)
-		return keyvault.SecretBundle{
-			Value: &val,
-			ID:    &secretName,
+		secretID := azsecrets.ID(secretName)
+		return azsecrets.GetSecretResponse{
+			Secret: azsecrets.Secret{
+				Value: &val,
+				ID:    &secretID,
+			},
 		}, nil
 	}
-	return keyvault.SecretBundle{}, secret.ErrKeyNotFound
+	return azsecrets.GetSecretResponse{}, secret.ErrKeyNotFound
 }
 
 func TestKeyvaultBackend(t *testing.T) {
@@ -40,7 +42,7 @@ func TestKeyvaultBackend(t *testing.T) {
 			"key2": "{\"foo\":\"bar\"}",
 		},
 	}
-	getKeyvaultClient = func(_ *autorest.Authorizer) keyvaultClient {
+	getKeyvaultClient = func(_ string) keyvaultClient {
 		return mockClient
 	}
 
@@ -78,7 +80,7 @@ func TestKeyvaultBackend_ForceString(t *testing.T) {
 			"key2": "{\"foo\":\"bar\"}",
 		},
 	}
-	getKeyvaultClient = func(_ *autorest.Authorizer) keyvaultClient {
+	getKeyvaultClient = func(_ string) keyvaultClient {
 		return mockClient
 	}
 
@@ -106,7 +108,7 @@ func TestKeyvaultBackend_NotJSON(t *testing.T) {
 			"key2": "foobar",
 		},
 	}
-	getKeyvaultClient = func(_ *autorest.Authorizer) keyvaultClient {
+	getKeyvaultClient = func(_ string) keyvaultClient {
 		return mockClient
 	}
 
@@ -139,7 +141,7 @@ func TestKeyVaultBackend_issue39434(t *testing.T) {
 			"key1": "{\\\"foo\\\":\\\"bar\\\"}",
 		},
 	}
-	getKeyvaultClient = func(_ *autorest.Authorizer) keyvaultClient {
+	getKeyvaultClient = func(_ string) keyvaultClient {
 		return mockClient
 	}
 
