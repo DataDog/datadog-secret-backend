@@ -92,9 +92,9 @@ func (g *GenericConnector) InitBackend(backendType string, backendConfig map[str
 // GetSecretOutputs returns a the value for a list of given secrets of form "<secret key>"
 func (g *GenericConnector) GetSecretOutputs(secrets []string) map[string]secret.Output {
 	secretOutputs := make(map[string]secret.Output, 0)
-	for _, s := range secrets {
-		segments := strings.SplitN(s, ";", 2)
-		secretOutputs[segments[1]] = g.Backend.GetSecretOutput(segments[1])
+	for _, secretKey := range secrets {
+		segments := strings.SplitN(secretKey, ";", 2)
+		secretOutputs[secretKey] = g.Backend.GetSecretOutput(segments[1])
 	}
 	return secretOutputs
 }
