@@ -51,10 +51,10 @@ func TestSecretsManagerBackend(t *testing.T) {
 
 	secretsManagerBackendParams := map[string]interface{}{
 		"backend_type": "aws.secrets",
-		"secret_id":    "key1",
 		"force_string": false,
 	}
-	secretsManagerSecretsBackend, err := NewSecretsManagerBackend(secretsManagerBackendParams)
+	secretsManagerBackendSecrets := []string{"key1;user", "key1;password"}
+	secretsManagerSecretsBackend, err := NewSecretsManagerBackend(secretsManagerBackendParams, secretsManagerBackendSecrets)
 	assert.NoError(t, err)
 
 	// Top-level keys are not fetchable
@@ -92,14 +92,11 @@ func TestSecretsManagerBackend_ForceString(t *testing.T) {
 		"secret_id":    "key1",
 		"force_string": true,
 	}
-	secretsManagerSecretsBackend, err := NewSecretsManagerBackend(secretsManagerBackendParams)
+	secretsManagerBackendSecrets := []string{"key1;user", "key1;password"}
+	secretsManagerSecretsBackend, err := NewSecretsManagerBackend(secretsManagerBackendParams, secretsManagerBackendSecrets)
 	assert.NoError(t, err)
 
-	secretOutput := secretsManagerSecretsBackend.GetSecretOutput("_")
-	assert.Equal(t, "{\"user\":\"foo\",\"password\":\"bar\"}", *secretOutput.Value)
-	assert.Nil(t, secretOutput.Error)
-
-	secretOutput = secretsManagerSecretsBackend.GetSecretOutput("key1")
+	secretOutput := secretsManagerSecretsBackend.GetSecretOutput("key1")
 	assert.Nil(t, secretOutput.Value)
 	assert.Equal(t, secret.ErrKeyNotFound.Error(), *secretOutput.Error)
 }
@@ -120,7 +117,8 @@ func TestSecretsManagerBackend_NotJSON(t *testing.T) {
 		"secret_id":    "key1",
 		"force_string": false,
 	}
-	secretsManagerSecretsBackend, err := NewSecretsManagerBackend(secretsManagerBackendParams)
+	secretsManagerBackendSecrets := []string{"key1;user", "key1;password"}
+	secretsManagerSecretsBackend, err := NewSecretsManagerBackend(secretsManagerBackendParams, secretsManagerBackendSecrets)
 	assert.NoError(t, err)
 
 	// Top-level keys are not fetchable
@@ -131,9 +129,4 @@ func TestSecretsManagerBackend_NotJSON(t *testing.T) {
 	secretOutput = secretsManagerSecretsBackend.GetSecretOutput("key2")
 	assert.Nil(t, secretOutput.Value)
 	assert.Equal(t, secret.ErrKeyNotFound.Error(), *secretOutput.Error)
-
-	// But the contents under the selected key are
-	secretOutput = secretsManagerSecretsBackend.GetSecretOutput("_")
-	assert.Equal(t, "not json", *secretOutput.Value)
-	assert.Nil(t, secretOutput.Error)
 }
