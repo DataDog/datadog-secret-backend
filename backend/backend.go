@@ -41,7 +41,7 @@ func (g *GenericConnector) InitBackend(backendType string, backendConfig map[str
 			g.Backend = backend
 		}
 	case "aws.ssm":
-		backend, err := aws.NewSSMParameterStoreBackend(backendConfig)
+		backend, err := aws.NewSSMParameterStoreBackend(backendConfig, backendSecrets)
 		if err != nil {
 			g.Backend = NewErrorBackend(err)
 		} else {

@@ -62,33 +62,6 @@ func (c *ssmMockClient) GetParameters(_ context.Context, params *ssm.GetParamete
 	}, nil
 }
 
-func TestSSMParameterStoreBackend_Parameters(t *testing.T) {
-	mockClient := &ssmMockClient{
-		parameters: map[string]interface{}{
-			"/group1/key1":      "value1",
-			"/group1/nest/key2": "value2",
-		},
-	}
-	getSSMClient = func(_ aws.Config) ssmClient {
-		return mockClient
-	}
-
-	ssmParameterStoreBackendParams := map[string]interface{}{
-		"backend_type": "aws.ssm",
-		"parameters":   []string{"/group1/key1", "/group1/nest/key2"},
-	}
-	ssmParameterStoreSecretsBackend, err := NewSSMParameterStoreBackend(ssmParameterStoreBackendParams)
-	assert.NoError(t, err)
-
-	secretOutput := ssmParameterStoreSecretsBackend.GetSecretOutput("/group1/key1")
-	assert.Equal(t, "value1", *secretOutput.Value)
-	assert.Nil(t, secretOutput.Error)
-
-	secretOutput = ssmParameterStoreSecretsBackend.GetSecretOutput("key_noexist")
-	assert.Nil(t, secretOutput.Value)
-	assert.Equal(t, secret.ErrKeyNotFound.Error(), *secretOutput.Error)
-}
-
 func TestSSMParameterStoreBackend_ParametersByPath(t *testing.T) {
 	mockClient := &ssmMockClient{
 		parameters: map[string]interface{}{
@@ -102,10 +75,10 @@ func TestSSMParameterStoreBackend_ParametersByPath(t *testing.T) {
 	}
 
 	ssmParameterStoreBackendParams := map[string]interface{}{
-		"backend_type":   "aws.ssm",
-		"parameter_path": "/group1",
+		"backend_type": "aws.ssm",
 	}
-	ssmParameterStoreSecretsBackend, err := NewSSMParameterStoreBackend(ssmParameterStoreBackendParams)
+	ssmParameterStoreBackendSecrets := []string{";/group1/key1", ";/group1/nest/key2", ";/group2/key3"}
+	ssmParameterStoreSecretsBackend, err := NewSSMParameterStoreBackend(ssmParameterStoreBackendParams, ssmParameterStoreBackendSecrets)
 	assert.NoError(t, err)
 
 	secretOutput := ssmParameterStoreSecretsBackend.GetSecretOutput("/group1/key1")
@@ -121,6 +94,6 @@ func TestSSMParameterStoreBackend_ParametersByPath(t *testing.T) {
 	assert.Equal(t, secret.ErrKeyNotFound.Error(), *secretOutput.Error)
 
 	secretOutput = ssmParameterStoreSecretsBackend.GetSecretOutput("/group2/key3")
-	assert.Nil(t, secretOutput.Value)
-	assert.Equal(t, secret.ErrKeyNotFound.Error(), *secretOutput.Error)
+	assert.Equal(t, "value3", *secretOutput.Value)
+	assert.Nil(t, secretOutput.Error)
 }

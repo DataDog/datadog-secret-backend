@@ -67,7 +67,6 @@ func NewSecretsManagerBackend(bc map[string]interface{}, bs []string) (
 	}
 	client := getSecretsManagerClient(*cfg)
 
-	// GetSecretValue
 	secretValue := make(map[string]string, 0)
 	for _, s := range bs {
 		segments := strings.SplitN(s, ";", 2)
@@ -110,7 +109,6 @@ func (b *SecretsManagerBackend) GetSecretOutput(secretKey string) secret.Output 
 
 	log.Error().
 		Str("backend_type", b.Config.BackendType).
-		Str("secret_id", b.Config.SecretID).
 		Str("secret_key", secretKey).
 		Msg(es)
 	return secret.Output{Value: nil, Error: &es}
