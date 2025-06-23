@@ -33,14 +33,14 @@ func (g *GenericConnector) InitBackend(backendType string, backendConfig map[str
 	backendConfig["backend_type"] = backendType
 	switch backendType {
 	case "aws.secrets":
-		backend, err := aws.NewSecretsManagerBackend(backendConfig)
+		backend, err := aws.NewSecretsManagerBackend(backendConfig, backendSecrets)
 		if err != nil {
 			g.Backend = NewErrorBackend(err)
 		} else {
 			g.Backend = backend
 		}
 	case "aws.ssm":
-		backend, err := aws.NewSSMParameterStoreBackend(backendConfig)
+		backend, err := aws.NewSSMParameterStoreBackend(backendConfig, backendSecrets)
 		if err != nil {
 			g.Backend = NewErrorBackend(err)
 		} else {
@@ -91,8 +91,8 @@ func (g *GenericConnector) InitBackend(backendType string, backendConfig map[str
 // GetSecretOutputs returns a the value for a list of given secrets of form "<secret key>"
 func (g *GenericConnector) GetSecretOutputs(secrets []string) map[string]secret.Output {
 	secretOutputs := make(map[string]secret.Output, 0)
-	for _, secretKey := range secrets {
-		secretOutputs[secretKey] = g.Backend.GetSecretOutput(secretKey)
+	for _, secretString := range secrets {
+		secretOutputs[secretString] = g.Backend.GetSecretOutput(secretString)
 	}
 	return secretOutputs
 }

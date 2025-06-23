@@ -10,6 +10,7 @@ package aws
 import (
 	"context"
 	"encoding/json"
+	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/secretsmanager"
@@ -47,7 +48,7 @@ type SecretsManagerBackend struct {
 }
 
 // NewSecretsManagerBackend returns a new AWS Secret Manager backend
-func NewSecretsManagerBackend(bc map[string]interface{}) (
+func NewSecretsManagerBackend(bc map[string]interface{}, bs []string) (
 	*SecretsManagerBackend, error) {
 
 	backendConfig := SecretsManagerBackendConfig{}
@@ -66,27 +67,29 @@ func NewSecretsManagerBackend(bc map[string]interface{}) (
 	}
 	client := getSecretsManagerClient(*cfg)
 
-	// GetSecretValue
-	input := &secretsmanager.GetSecretValueInput{
-		SecretId: &backendConfig.SecretID,
-	}
-	out, err := client.GetSecretValue(context.TODO(), input)
-	if err != nil {
-		log.Error().Err(err).
-			Str("backend_type", backendConfig.BackendType).
-			Str("secret_id", backendConfig.SecretID).
-			Str("aws_access_key_id", backendConfig.Session.AccessKeyID).
-			Str("aws_profile", backendConfig.Session.Profile).
-			Msg("failed to retrieve secret value")
-		return nil, err
-	}
-
 	secretValue := make(map[string]string, 0)
-	if backendConfig.ForceString {
-		secretValue["_"] = *out.SecretString
-	} else {
-		if err := json.Unmarshal([]byte(*out.SecretString), &secretValue); err != nil {
-			secretValue["_"] = *out.SecretString
+	for _, s := range bs {
+		segments := strings.SplitN(s, ";", 2)
+		input := &secretsmanager.GetSecretValueInput{
+			SecretId: &segments[0],
+		}
+		out, err := client.GetSecretValue(context.TODO(), input)
+		if err != nil {
+			log.Error().Err(err).
+				Str("backend_type", backendConfig.BackendType).
+				Str("secret_id", segments[0]).
+				Str("aws_access_key_id", backendConfig.Session.AccessKeyID).
+				Str("aws_profile", backendConfig.Session.Profile).
+				Msg("failed to retrieve secret value")
+			return nil, err
+		}
+
+		if backendConfig.ForceString {
+			secretValue[segments[1]] = *out.SecretString
+		} else {
+			if err := json.Unmarshal([]byte(*out.SecretString), &secretValue); err != nil {
+				secretValue[segments[1]] = *out.SecretString
+			}
 		}
 	}
 
@@ -98,16 +101,16 @@ func NewSecretsManagerBackend(bc map[string]interface{}) (
 }
 
 // GetSecretOutput returns a the value for a specific secret
-func (b *SecretsManagerBackend) GetSecretOutput(secretKey string) secret.Output {
-	if val, ok := b.Secret[secretKey]; ok {
+func (b *SecretsManagerBackend) GetSecretOutput(secretString string) secret.Output {
+	segments := strings.SplitN(secretString, ";", 2)
+	if val, ok := b.Secret[segments[1]]; ok {
 		return secret.Output{Value: &val, Error: nil}
 	}
 	es := secret.ErrKeyNotFound.Error()
 
 	log.Error().
 		Str("backend_type", b.Config.BackendType).
-		Str("secret_id", b.Config.SecretID).
-		Str("secret_key", secretKey).
+		Str("secret_key", segments[1]).
 		Msg(es)
 	return secret.Output{Value: nil, Error: &es}
 }
