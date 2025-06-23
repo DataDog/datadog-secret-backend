@@ -73,10 +73,6 @@ When handling single strings, the backend configuration setting `force_string: t
 ---
 secret_backend_type: aws.ssm
 secret_backend_config:
-  parameters: 
-    - /DatadogAgent/Production/ParameterKey1
-    - /DatadogAgent/Production/ParameterKey2
-    - /DatadogAgent/Production/ParameterKey3
   aws_session:
     aws_region: us-east-1
 ```
