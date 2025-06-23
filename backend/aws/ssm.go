@@ -35,7 +35,6 @@ var getSSMClient = func(cfg aws.Config) ssmClient {
 type SSMParameterStoreBackendConfig struct {
 	Session     SessionBackendConfig `mapstructure:"aws_session"`
 	BackendType string               `mapstructure:"backend_type"`
-	Parameters  []string             `mapstructure:"parameters"`
 }
 
 // SSMParameterStoreBackend represents backend for AWS SSM
@@ -66,30 +65,26 @@ func NewSSMParameterStoreBackend(bc map[string]interface{}, bs []string) (
 	}
 	client := getSSMClient(*cfg)
 
-	for _, secretPath := range bs {
-		input := &ssm.GetParametersByPathInput{
-			Path:           &secretPath,
-			Recursive:      aws.Bool(true),
+	// GetParameters
+	if len(bs) > 0 {
+		input := &ssm.GetParametersInput{
+			Names:          bs,
 			WithDecryption: aws.Bool(true),
 		}
+		out, err := client.GetParameters(context.TODO(), input)
+		if err != nil {
+			log.Error().Err(err).
+				Str("backend_type", backendConfig.BackendType).
+				Strs("parameters", bs).
+				Str("aws_access_key_id", backendConfig.Session.AccessKeyID).
+				Str("aws_profile", backendConfig.Session.Profile).
+				Str("aws_region", backendConfig.Session.Region).
+				Msg("failed to retrieve parameters")
+			return nil, err
+		}
 
-		pager := ssm.NewGetParametersByPathPaginator(client, input)
-		for pager.HasMorePages() {
-			out, err := pager.NextPage(context.TODO())
-			if err != nil {
-				log.Error().Err(err).
-					Str("backend_type", backendConfig.BackendType).
-					Str("parameter_path", secretPath).
-					Str("aws_access_key_id", backendConfig.Session.AccessKeyID).
-					Str("aws_profile", backendConfig.Session.Profile).
-					Str("aws_region", backendConfig.Session.Region).
-					Msg("failed to retrieve parameters from path")
-				return nil, err
-			}
-
-			for _, parameter := range out.Parameters {
-				secretValue[*parameter.Name] = *parameter.Value
-			}
+		for _, parameter := range out.Parameters {
+			secretValue[*parameter.Name] = *parameter.Value
 		}
 	}
 
