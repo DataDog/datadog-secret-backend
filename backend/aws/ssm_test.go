@@ -77,7 +77,7 @@ func TestSSMParameterStoreBackend_ParametersByPath(t *testing.T) {
 	ssmParameterStoreBackendParams := map[string]interface{}{
 		"backend_type": "aws.ssm",
 	}
-	ssmParameterStoreBackendSecrets := []string{";/group1/key1", ";/group1/nest/key2", ";/group2/key3"}
+	ssmParameterStoreBackendSecrets := []string{"/group1/key1", "/group1/nest/key2", "/group2/key3"}
 	ssmParameterStoreSecretsBackend, err := NewSSMParameterStoreBackend(ssmParameterStoreBackendParams, ssmParameterStoreBackendSecrets)
 	assert.NoError(t, err)
 

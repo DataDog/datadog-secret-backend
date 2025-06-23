@@ -58,12 +58,12 @@ secret_backend_config:
 
 **secret_backend_type** must be set to `aws.ssm`.
 
-The backend secret is referenced in your Datadog Agent configuration file using the **ENC** notation. Make sure to put a *semicolon* (;) before specifying your parameter path.
+The backend secret is referenced in your Datadog Agent configuration file using the **ENC** notation.
 
 ```yaml
 # /etc/datadog-agent/datadog.yaml
 
-api_key: ENC[;{parameter_full_path}]
+api_key: ENC[{parameter_full_path}]
 
 ```
 
@@ -90,9 +90,9 @@ and finally accessed in the Datadog Agent:
 
 ```yaml
 # /etc/datadog-agent/datadog.yaml
-property1: "ENC[;/DatadogAgent/Production/ParameterKey1]"
-property2: "ENC[;/DatadogAgent/Production/ParameterKey2]"
-property3: "ENC[;/DatadogAgent/Production/ParameterKey3]"
+property1: "ENC[/DatadogAgent/Production/ParameterKey1]"
+property2: "ENC[/DatadogAgent/Production/ParameterKey2]"
+property3: "ENC[/DatadogAgent/Production/ParameterKey3]"
 ```
 
 Currently, `StringList` parameter store values will be retained as a comma-separated list. `SecureString` will be properly decrypted automatically, assuming the `aws_session` credentials have appropriate rights to the KMS key used to encrypt the `SecureString` value.
@@ -119,7 +119,7 @@ Each of the following examples will access the secret from the Datadog Agent con
 ## The Datadog API key to associate your Agent's data with your organization.
 ## Create a new API key here: https://app.datadoghq.com/account/settings
 #
-api_key: "ENC[;/DatadogAgent/Production/api_key]" 
+api_key: "ENC[/DatadogAgent/Production/api_key]" 
 ```
 
 **AWS IAM User Access Key with SSM parameter_path recursive fetch**

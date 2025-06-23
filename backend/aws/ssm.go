@@ -8,7 +8,6 @@ package aws
 
 import (
 	"context"
-	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/ssm"
@@ -67,10 +66,9 @@ func NewSSMParameterStoreBackend(bc map[string]interface{}, bs []string) (
 	}
 	client := getSSMClient(*cfg)
 
-	for _, s := range bs {
-		segments := strings.SplitN(s, ";", 2)
+	for _, secretPath := range bs {
 		input := &ssm.GetParametersByPathInput{
-			Path:           &segments[1],
+			Path:           &secretPath,
 			Recursive:      aws.Bool(true),
 			WithDecryption: aws.Bool(true),
 		}
@@ -81,7 +79,7 @@ func NewSSMParameterStoreBackend(bc map[string]interface{}, bs []string) (
 			if err != nil {
 				log.Error().Err(err).
 					Str("backend_type", backendConfig.BackendType).
-					Str("parameter_path", segments[1]).
+					Str("parameter_path", secretPath).
 					Str("aws_access_key_id", backendConfig.Session.AccessKeyID).
 					Str("aws_profile", backendConfig.Session.Profile).
 					Str("aws_region", backendConfig.Session.Region).

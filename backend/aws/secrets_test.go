@@ -8,6 +8,7 @@ package aws
 
 import (
 	"context"
+	"strings"
 	"testing"
 
 	"github.com/DataDog/datadog-secret-backend/secret"
@@ -28,9 +29,10 @@ func (c *secretsManagerMockClient) GetSecretValue(_ context.Context, params *sec
 	}
 
 	for key, value := range c.secrets {
-		if key == *params.SecretId {
+		segments := strings.SplitN(key, ";", 2)
+		if len(segments) == 2 && segments[1] == *params.SecretId {
 			return &secretsmanager.GetSecretValueOutput{
-				Name:         aws.String(key),
+				Name:         aws.String(segments[1]),
 				SecretString: aws.String(value.(string)),
 			}, nil
 		}
@@ -41,8 +43,8 @@ func (c *secretsManagerMockClient) GetSecretValue(_ context.Context, params *sec
 func TestSecretsManagerBackend(t *testing.T) {
 	mockClient := &secretsManagerMockClient{
 		secrets: map[string]interface{}{
-			"key1": "{\"user\":\"foo\",\"password\":\"bar\"}",
-			"key2": "{\"foo\":\"bar\"}",
+			"something1;key1": "{\"user\":\"foo\",\"password\":\"bar\"}",
+			"something2;key2": "{\"foo\":\"bar\"}",
 		},
 	}
 	getSecretsManagerClient = func(_ aws.Config) secretsManagerClient {
@@ -56,31 +58,29 @@ func TestSecretsManagerBackend(t *testing.T) {
 	secretsManagerBackendSecrets := []string{"key1;user", "key1;password"}
 	secretsManagerSecretsBackend, err := NewSecretsManagerBackend(secretsManagerBackendParams, secretsManagerBackendSecrets)
 	assert.NoError(t, err)
+	assert.NotNil(t, secretsManagerSecretsBackend)
 
-	// Top-level keys are not fetchable
-	secretOutput := secretsManagerSecretsBackend.GetSecretOutput("key1")
-	assert.Nil(t, secretOutput.Value)
-	assert.Equal(t, secret.ErrKeyNotFound.Error(), *secretOutput.Error)
-
-	secretOutput = secretsManagerSecretsBackend.GetSecretOutput("key2")
-	assert.Nil(t, secretOutput.Value)
-	assert.Equal(t, secret.ErrKeyNotFound.Error(), *secretOutput.Error)
-
-	// But the contents under the selected key are
-	secretOutput = secretsManagerSecretsBackend.GetSecretOutput("user")
+	secretOutput := secretsManagerSecretsBackend.GetSecretOutput("key1;user")
+	assert.NotNil(t, secretOutput.Value)
 	assert.Equal(t, "foo", *secretOutput.Value)
 	assert.Nil(t, secretOutput.Error)
 
-	secretOutput = secretsManagerSecretsBackend.GetSecretOutput("password")
+	secretOutput = secretsManagerSecretsBackend.GetSecretOutput("key1;password")
+	assert.NotNil(t, secretOutput.Value)
 	assert.Equal(t, "bar", *secretOutput.Value)
 	assert.Nil(t, secretOutput.Error)
+
+	secretOutput = secretsManagerSecretsBackend.GetSecretOutput("key1;nonexistent")
+	assert.Nil(t, secretOutput.Value)
+	assert.NotNil(t, secretOutput.Error)
+	assert.Equal(t, secret.ErrKeyNotFound.Error(), *secretOutput.Error)
 }
 
 func TestSecretsManagerBackend_ForceString(t *testing.T) {
 	mockClient := &secretsManagerMockClient{
 		secrets: map[string]interface{}{
-			"key1": "{\"user\":\"foo\",\"password\":\"bar\"}",
-			"key2": "{\"foo\":\"bar\"}",
+			"something1;key1": "{\"user\":\"foo\",\"password\":\"bar\"}",
+			"something2;key2": "{\"foo\":\"bar\"}",
 		},
 	}
 	getSecretsManagerClient = func(_ aws.Config) secretsManagerClient {
@@ -89,23 +89,24 @@ func TestSecretsManagerBackend_ForceString(t *testing.T) {
 
 	secretsManagerBackendParams := map[string]interface{}{
 		"backend_type": "aws.secrets",
-		"secret_id":    "key1",
 		"force_string": true,
 	}
 	secretsManagerBackendSecrets := []string{"key1;user", "key1;password"}
 	secretsManagerSecretsBackend, err := NewSecretsManagerBackend(secretsManagerBackendParams, secretsManagerBackendSecrets)
 	assert.NoError(t, err)
+	assert.NotNil(t, secretsManagerSecretsBackend)
 
-	secretOutput := secretsManagerSecretsBackend.GetSecretOutput("key1")
-	assert.Nil(t, secretOutput.Value)
-	assert.Equal(t, secret.ErrKeyNotFound.Error(), *secretOutput.Error)
+	secretOutput := secretsManagerSecretsBackend.GetSecretOutput("key1;user")
+	assert.NotNil(t, secretOutput.Value)
+	assert.Equal(t, "{\"user\":\"foo\",\"password\":\"bar\"}", *secretOutput.Value)
+	assert.Nil(t, secretOutput.Error)
 }
 
 func TestSecretsManagerBackend_NotJSON(t *testing.T) {
 	mockClient := &secretsManagerMockClient{
 		secrets: map[string]interface{}{
-			"key1": "not json",
-			"key2": "foobar",
+			"something1;key1": "not json",
+			"something2;key2": "foobar",
 		},
 	}
 	getSecretsManagerClient = func(_ aws.Config) secretsManagerClient {
@@ -114,19 +115,18 @@ func TestSecretsManagerBackend_NotJSON(t *testing.T) {
 
 	secretsManagerBackendParams := map[string]interface{}{
 		"backend_type": "aws.secrets",
-		"secret_id":    "key1",
 		"force_string": false,
 	}
-	secretsManagerBackendSecrets := []string{"key1;user", "key1;password"}
+	secretsManagerBackendSecrets := []string{"key1;value1", "key2;value2"}
 	secretsManagerSecretsBackend, err := NewSecretsManagerBackend(secretsManagerBackendParams, secretsManagerBackendSecrets)
 	assert.NoError(t, err)
 
 	// Top-level keys are not fetchable
-	secretOutput := secretsManagerSecretsBackend.GetSecretOutput("key1")
+	secretOutput := secretsManagerSecretsBackend.GetSecretOutput("something1;key1")
 	assert.Nil(t, secretOutput.Value)
 	assert.Equal(t, secret.ErrKeyNotFound.Error(), *secretOutput.Error)
 
-	secretOutput = secretsManagerSecretsBackend.GetSecretOutput("key2")
+	secretOutput = secretsManagerSecretsBackend.GetSecretOutput("something2;key2")
 	assert.Nil(t, secretOutput.Value)
 	assert.Equal(t, secret.ErrKeyNotFound.Error(), *secretOutput.Error)
 }

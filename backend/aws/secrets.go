@@ -101,15 +101,16 @@ func NewSecretsManagerBackend(bc map[string]interface{}, bs []string) (
 }
 
 // GetSecretOutput returns a the value for a specific secret
-func (b *SecretsManagerBackend) GetSecretOutput(secretKey string) secret.Output {
-	if val, ok := b.Secret[secretKey]; ok {
+func (b *SecretsManagerBackend) GetSecretOutput(secretString string) secret.Output {
+	segments := strings.SplitN(secretString, ";", 2)
+	if val, ok := b.Secret[segments[1]]; ok {
 		return secret.Output{Value: &val, Error: nil}
 	}
 	es := secret.ErrKeyNotFound.Error()
 
 	log.Error().
 		Str("backend_type", b.Config.BackendType).
-		Str("secret_key", secretKey).
+		Str("secret_key", segments[1]).
 		Msg(es)
 	return secret.Output{Value: nil, Error: &es}
 }

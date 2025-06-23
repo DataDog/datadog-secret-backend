@@ -9,7 +9,6 @@ package backend
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/DataDog/datadog-secret-backend/backend/akeyless"
 	"github.com/DataDog/datadog-secret-backend/backend/aws"
@@ -92,9 +91,8 @@ func (g *GenericConnector) InitBackend(backendType string, backendConfig map[str
 // GetSecretOutputs returns a the value for a list of given secrets of form "<secret key>"
 func (g *GenericConnector) GetSecretOutputs(secrets []string) map[string]secret.Output {
 	secretOutputs := make(map[string]secret.Output, 0)
-	for _, secretKey := range secrets {
-		segments := strings.SplitN(secretKey, ";", 2)
-		secretOutputs[secretKey] = g.Backend.GetSecretOutput(segments[1])
+	for _, secretString := range secrets {
+		secretOutputs[secretString] = g.Backend.GetSecretOutput(secretString)
 	}
 	return secretOutputs
 }
