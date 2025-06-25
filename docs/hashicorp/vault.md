@@ -9,8 +9,6 @@
 | Setting | Description |
 | --- | --- |
 | backend_type | Backend type |
-| secret_path| Vault secret prefix, recursive |
-| secrets | List of individual Vault secrets |
 | vault_address | DNS/IP of the Hashicorp Vault system |
 | vault_tls_config | TLS Configuration to access the Vault system |
 | vault_session | Authentication configuration to access the Vault system |
@@ -57,7 +55,6 @@ secret_backend_config:
   vault_address: vault_address: http://myvaultaddress.net
   vault_tls_config:
       # ... TLS settings if applicable
-  secret_path: /Datadog/Production
   vault_session:
     vault_role_id: 123456-************
     vault_secret_id: abcdef-********

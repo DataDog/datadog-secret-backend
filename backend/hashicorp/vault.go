@@ -24,7 +24,6 @@ type VaultBackendConfig struct {
 	VaultToken   string                    `mapstructure:"vault_token"`
 	BackendType  string                    `mapstructure:"backend_type"`
 	VaultAddress string                    `mapstructure:"vault_address"`
-	SecretPath   string                    `mapstructure:"secret_path"`
 	VaultTLS     *VaultTLSConfig           `mapstructure:"vault_tls_config"`
 }
 
@@ -140,7 +139,6 @@ func (b *VaultBackend) GetSecretOutput(secretKey string) secret.Output {
 
 	log.Error().
 		Str("backend_type", b.Config.BackendType).
-		Str("secret_path", b.Config.SecretPath).
 		Str("secret_key", segments[1]).
 		Msg("failed to retrieve secrets")
 	return secret.Output{Value: nil, Error: &es}
