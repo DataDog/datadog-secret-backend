@@ -41,17 +41,16 @@ secret_backend_config:
   vault_session:
     vault_auth_type: aws
     # ... additional session settings
-  secret_path: /Path/To/Secrets
 ```
 
 **backend_type** must be set to `hashicorp.vault`.
 
-The backend secret is referenced in your Datadog Agent configuration file using the **ENC** notation.
+The path to the secret and the backend secret itself is referenced in your Datadog Agent configuration file using the **ENC** notation. The two need to be separated by a semicolon.
 
 ```yaml
 # /etc/datadog-agent/datadog.yaml
 
-api_key: "ENC[{secret}]"
+api_key: "ENC[{secret_path};{secret}]"
 
 secret_backend_type: hashicorp.vault
 secret_backend_config:
@@ -86,7 +85,7 @@ Each of the following examples will access the secret from the Datadog Agent con
 ## The Datadog API key to associate your Agent's data with your organization.
 ## Create a new API key here: https://app.datadoghq.com/account/settings
 #
-api_key: "ENC[apikey]" 
+api_key: "ENC[/Datadog/Production;apikey]" 
 ```
 
 ### Hashicorp Vault Authentication with AWS Instance Profile
@@ -97,7 +96,6 @@ api_key: "ENC[apikey]"
 secret_backend_type: hashicorp.vault
 secret_backend_config:
   vault_address: vault_address: http://myvaultaddress.net
-  secret_path: /Datadog/Production
   vault_session:
     vault_auth_type: aws
     vault_aws_role: Name-of-IAM-role-attached-to-machine
