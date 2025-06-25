@@ -10,6 +10,7 @@ package hashicorp
 import (
 	"context"
 	"errors"
+	"strings"
 
 	"github.com/DataDog/datadog-secret-backend/secret"
 	"github.com/hashicorp/vault/api"
@@ -23,7 +24,6 @@ type VaultBackendConfig struct {
 	VaultToken   string                    `mapstructure:"vault_token"`
 	BackendType  string                    `mapstructure:"backend_type"`
 	VaultAddress string                    `mapstructure:"vault_address"`
-	SecretPath   string                    `mapstructure:"secret_path"`
 	VaultTLS     *VaultTLSConfig           `mapstructure:"vault_tls_config"`
 }
 
@@ -105,20 +105,19 @@ func NewVaultBackend(bc map[string]interface{}, inputSecrets []string) (*VaultBa
 		return nil, errors.New("no auth method or token provided")
 	}
 
-	secret, err := client.Logical().Read(backendConfig.SecretPath)
-	if err != nil {
-		log.Error().Err(err).
-			Msg("Failed to read secret")
-		return nil, err
-	}
 	secretValue := make(map[string]string, 0)
+	for _, item := range inputSecrets {
+		segments := strings.SplitN(item, ";", 2)
+		secret, err := client.Logical().Read(segments[0])
+		if err != nil {
+			log.Error().Err(err).
+				Msg("Failed to read secret")
+			return nil, err
+		}
 
-	if backendConfig.SecretPath != "" {
-		if len(inputSecrets) > 0 {
-			for _, item := range inputSecrets {
-				if data, ok := secret.Data[item]; ok {
-					secretValue[item] = data.(string)
-				}
+		if segments[0] != "" {
+			if data, ok := secret.Data[segments[1]]; ok {
+				secretValue[segments[1]] = data.(string)
 			}
 		}
 	}
@@ -132,15 +131,15 @@ func NewVaultBackend(bc map[string]interface{}, inputSecrets []string) (*VaultBa
 
 // GetSecretOutput returns a the value for a specific secret
 func (b *VaultBackend) GetSecretOutput(secretKey string) secret.Output {
-	if val, ok := b.Secret[secretKey]; ok {
+	segments := strings.SplitN(secretKey, ";", 2)
+	if val, ok := b.Secret[segments[1]]; ok {
 		return secret.Output{Value: &val, Error: nil}
 	}
 	es := secret.ErrKeyNotFound.Error()
 
 	log.Error().
 		Str("backend_type", b.Config.BackendType).
-		Str("secret_path", b.Config.SecretPath).
-		Str("secret_key", secretKey).
+		Str("secret_key", segments[1]).
 		Msg("failed to retrieve secrets")
 	return secret.Output{Value: nil, Error: &es}
 }
