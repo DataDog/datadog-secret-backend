@@ -11,7 +11,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/DataDog/datadog-secret-backend/secret"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/ssm"
 	"github.com/aws/aws-sdk-go-v2/service/ssm/types"
@@ -62,6 +61,27 @@ func (c *ssmMockClient) GetParameters(_ context.Context, params *ssm.GetParamete
 	}, nil
 }
 
+func (c *ssmMockClient) GetParameter(_ context.Context, params *ssm.GetParameterInput, _ ...func(*ssm.Options)) (*ssm.GetParameterOutput, error) {
+	if params == nil || params.Name == nil {
+		return nil, nil
+	}
+
+	paramName := *params.Name
+	if value, exists := c.parameters[paramName]; exists {
+		return &ssm.GetParameterOutput{
+			Parameter: &types.Parameter{
+				Name:  aws.String(paramName),
+				Value: aws.String(value.(string)),
+			},
+		}, nil
+	}
+
+	// Return AWS-like error for parameter not found
+	return nil, &types.ParameterNotFound{
+		Message: aws.String("Parameter " + paramName + " not found."),
+	}
+}
+
 func TestSSMParameterStoreBackend_ParametersByPath(t *testing.T) {
 	mockClient := &ssmMockClient{
 		parameters: map[string]interface{}{
@@ -77,8 +97,7 @@ func TestSSMParameterStoreBackend_ParametersByPath(t *testing.T) {
 	ssmParameterStoreBackendParams := map[string]interface{}{
 		"backend_type": "aws.ssm",
 	}
-	ssmParameterStoreBackendSecrets := []string{"/group1/key1", "/group1/nest/key2", "/group2/key3"}
-	ssmParameterStoreSecretsBackend, err := NewSSMParameterStoreBackend(ssmParameterStoreBackendParams, ssmParameterStoreBackendSecrets)
+	ssmParameterStoreSecretsBackend, err := NewSSMParameterStoreBackend(ssmParameterStoreBackendParams)
 	assert.NoError(t, err)
 
 	secretOutput := ssmParameterStoreSecretsBackend.GetSecretOutput("/group1/key1")
@@ -91,7 +110,8 @@ func TestSSMParameterStoreBackend_ParametersByPath(t *testing.T) {
 
 	secretOutput = ssmParameterStoreSecretsBackend.GetSecretOutput("/group1/key_noexist")
 	assert.Nil(t, secretOutput.Value)
-	assert.Equal(t, secret.ErrKeyNotFound.Error(), *secretOutput.Error)
+	assert.NotNil(t, secretOutput.Error)
+	assert.Contains(t, *secretOutput.Error, "not found")
 
 	secretOutput = ssmParameterStoreSecretsBackend.GetSecretOutput("/group2/key3")
 	assert.Equal(t, "value3", *secretOutput.Value)
