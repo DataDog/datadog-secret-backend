@@ -29,18 +29,18 @@ type GenericConnector struct {
 }
 
 // InitBackend initialize the backend based on their configuration
-func (g *GenericConnector) InitBackend(backendType string, backendConfig map[string]interface{}, backendSecrets []string) {
+func (g *GenericConnector) InitBackend(backendType string, backendConfig map[string]interface{}) {
 	backendConfig["backend_type"] = backendType
 	switch backendType {
 	case "aws.secrets":
-		backend, err := aws.NewSecretsManagerBackend(backendConfig, backendSecrets)
+		backend, err := aws.NewSecretsManagerBackend(backendConfig)
 		if err != nil {
 			g.Backend = NewErrorBackend(err)
 		} else {
 			g.Backend = backend
 		}
 	case "aws.ssm":
-		backend, err := aws.NewSSMParameterStoreBackend(backendConfig, backendSecrets)
+		backend, err := aws.NewSSMParameterStoreBackend(backendConfig, nil)
 		if err != nil {
 			g.Backend = NewErrorBackend(err)
 		} else {
@@ -54,7 +54,7 @@ func (g *GenericConnector) InitBackend(backendType string, backendConfig map[str
 			g.Backend = backend
 		}
 	case "hashicorp.vault":
-		backend, err := hashicorp.NewVaultBackend(backendConfig, backendSecrets)
+		backend, err := hashicorp.NewVaultBackend(backendConfig, nil)
 		if err != nil {
 			g.Backend = NewErrorBackend(err)
 		} else {
