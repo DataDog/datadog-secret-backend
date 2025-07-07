@@ -40,11 +40,11 @@ type VaultTLSConfig struct {
 // VaultBackend is a backend to fetch secrets from Hashicorp vault
 type VaultBackend struct {
 	Config VaultBackendConfig
-	Secret map[string]string
+	Client *api.Client
 }
 
 // NewVaultBackend returns a new backend for Hashicorp vault
-func NewVaultBackend(bc map[string]interface{}, inputSecrets []string) (*VaultBackend, error) {
+func NewVaultBackend(bc map[string]interface{}) (*VaultBackend, error) {
 	backendConfig := VaultBackendConfig{}
 	err := mapstructure.Decode(bc, &backendConfig)
 	if err != nil {
@@ -105,41 +105,65 @@ func NewVaultBackend(bc map[string]interface{}, inputSecrets []string) (*VaultBa
 		return nil, errors.New("no auth method or token provided")
 	}
 
-	secretValue := make(map[string]string, 0)
-	for _, item := range inputSecrets {
-		segments := strings.SplitN(item, ";", 2)
-		secret, err := client.Logical().Read(segments[0])
-		if err != nil {
-			log.Error().Err(err).
-				Msg("Failed to read secret")
-			return nil, err
-		}
-
-		if segments[0] != "" {
-			if data, ok := secret.Data[segments[1]]; ok {
-				secretValue[segments[1]] = data.(string)
-			}
-		}
-	}
-
 	backend := &VaultBackend{
 		Config: backendConfig,
-		Secret: secretValue,
+		Client: client,
 	}
 	return backend, nil
 }
 
 // GetSecretOutput returns a the value for a specific secret
-func (b *VaultBackend) GetSecretOutput(secretKey string) secret.Output {
-	segments := strings.SplitN(secretKey, ";", 2)
-	if val, ok := b.Secret[segments[1]]; ok {
-		return secret.Output{Value: &val, Error: nil}
+func (b *VaultBackend) GetSecretOutput(secretString string) secret.Output {
+	segments := strings.SplitN(secretString, ";", 2)
+	if len(segments) != 2 {
+		es := "invalid secret format, expected 'secret_id;key'"
+		log.Error().
+			Str("backend_type", b.Config.BackendType).
+			Str("secret_string", secretString).
+			Msg(es)
+		return secret.Output{Value: nil, Error: &es}
 	}
-	es := secret.ErrKeyNotFound.Error()
+	secretPath := segments[0]
+	secretKey := segments[1]
+	sec, err := b.Client.Logical().Read(secretPath)
+	if err != nil {
+		es := err.Error()
+		log.Error().Err(err).
+			Str("backend_type", b.Config.BackendType).
+			Str("secret_path", secretPath).
+			Str("secret_key", secretKey).
+			Msg("failed to read secret from vault")
+		return secret.Output{Value: nil, Error: &es}
+	}
 
+	if sec == nil || sec.Data == nil {
+		es := "secret data is nil"
+		log.Error().
+			Str("backend_type", b.Config.BackendType).
+			Str("secret_path", secretPath).
+			Str("secret_key", secretKey).
+			Msg(es)
+		return secret.Output{Value: nil, Error: &es}
+	}
+
+	if data, ok := sec.Data[secretKey]; ok {
+		if strValue, ok := data.(string); ok {
+			return secret.Output{Value: &strValue, Error: nil}
+		}
+		es := "secret value is not a string"
+		log.Error().
+			Str("backend_type", b.Config.BackendType).
+			Str("secret_path", secretPath).
+			Str("secret_key", secretKey).
+			Msg(es)
+		return secret.Output{Value: nil, Error: &es}
+	}
+
+	es := secret.ErrKeyNotFound.Error()
 	log.Error().
 		Str("backend_type", b.Config.BackendType).
-		Str("secret_key", segments[1]).
+		Str("secret_path", secretPath).
+		Str("secret_key", secretKey).
 		Msg("failed to retrieve secrets")
 	return secret.Output{Value: nil, Error: &es}
 }
