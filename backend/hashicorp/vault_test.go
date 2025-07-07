@@ -30,23 +30,25 @@ func TestVaultBackend(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Create a new Vault backend.
-	inputSecrets := []string{"key1", "key2"}
 	backendConfig := map[string]interface{}{
 		"vault_address": client.Address(),
-		"secret_path":   "secret/foo",
 		"backend_type":  "hashicorp.vault",
 		// Note: we're not testing the whole "session" part of the backend here as we're using the root token.
 		"vault_token": token,
 	}
 
-	secretsBackend, err := NewVaultBackend(backendConfig, inputSecrets)
+	secretsBackend, err := NewVaultBackend(backendConfig)
 	assert.NoError(t, err)
 
-	secretOutput := secretsBackend.GetSecretOutput("key1")
+	secretOutput := secretsBackend.GetSecretOutput("secret/foo;key1")
 	assert.Equal(t, "value1", *secretOutput.Value)
 	assert.Nil(t, secretOutput.Error)
 
-	secretOutput = secretsBackend.GetSecretOutput("key_noexist")
+	secretOutput = secretsBackend.GetSecretOutput("secret/foo;key2")
+	assert.Equal(t, "value2", *secretOutput.Value)
+	assert.Nil(t, secretOutput.Error)
+
+	secretOutput = secretsBackend.GetSecretOutput("secret/foo;key_noexist")
 	assert.Nil(t, secretOutput.Value)
 	assert.Equal(t, secret.ErrKeyNotFound.Error(), *secretOutput.Error)
 }
@@ -62,28 +64,17 @@ func TestVaultBackend_KeyNotFound(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Create a new Vault backend.
-	inputSecrets := []string{"key_noexist"}
 	backendConfig := map[string]interface{}{
 		"vault_address": client.Address(),
-		"secret_path":   "secret/foo",
 		"backend_type":  "hashicorp.vault",
 		// Note: we're not testing the whole "session" part of the backend here as we're using the root token.
 		"vault_token": token,
 	}
 
-	secretsBackend, err := NewVaultBackend(backendConfig, inputSecrets)
+	secretsBackend, err := NewVaultBackend(backendConfig)
 	assert.NoError(t, err)
 
-	// Check that the keys are not found.
-	secretOutput := secretsBackend.GetSecretOutput("key1")
-	assert.Nil(t, secretOutput.Value)
-	assert.Equal(t, secret.ErrKeyNotFound.Error(), *secretOutput.Error)
-
-	secretOutput = secretsBackend.GetSecretOutput("key2")
-	assert.Nil(t, secretOutput.Value)
-	assert.Equal(t, secret.ErrKeyNotFound.Error(), *secretOutput.Error)
-
-	secretOutput = secretsBackend.GetSecretOutput("key_noexist")
+	secretOutput := secretsBackend.GetSecretOutput("secret/foo;key_noexist")
 	assert.Nil(t, secretOutput.Value)
 	assert.Equal(t, secret.ErrKeyNotFound.Error(), *secretOutput.Error)
 }

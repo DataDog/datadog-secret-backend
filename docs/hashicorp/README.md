@@ -83,7 +83,6 @@ The following `vault_session` settings are available:
 secret_backend_type: hashicorp.vault
 secret_backend_config:
   vault_address: vault_address: http://myvaultaddress.net
-  secret_path: /Datadog/Production
   vault_session:
     vault_auth_type: aws
     vault_aws_role: Name-of-IAM-role-attached-to-machine

@@ -54,7 +54,7 @@ func (g *GenericConnector) InitBackend(backendType string, backendConfig map[str
 			g.Backend = backend
 		}
 	case "hashicorp.vault":
-		backend, err := hashicorp.NewVaultBackend(backendConfig, nil)
+		backend, err := hashicorp.NewVaultBackend(backendConfig)
 		if err != nil {
 			g.Backend = NewErrorBackend(err)
 		} else {
