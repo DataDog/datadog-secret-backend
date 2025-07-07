@@ -10,6 +10,7 @@ package aws
 import (
 	"context"
 	"encoding/json"
+	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/secretsmanager"
@@ -43,7 +44,7 @@ type SecretsManagerBackendConfig struct {
 // SecretsManagerBackend represents backend for AWS Secret Manager
 type SecretsManagerBackend struct {
 	Config SecretsManagerBackendConfig
-	Secret map[string]string
+	Client secretsManagerClient
 }
 
 // NewSecretsManagerBackend returns a new AWS Secret Manager backend
@@ -66,48 +67,75 @@ func NewSecretsManagerBackend(bc map[string]interface{}) (
 	}
 	client := getSecretsManagerClient(*cfg)
 
-	// GetSecretValue
-	input := &secretsmanager.GetSecretValueInput{
-		SecretId: &backendConfig.SecretID,
-	}
-	out, err := client.GetSecretValue(context.TODO(), input)
-	if err != nil {
-		log.Error().Err(err).
-			Str("backend_type", backendConfig.BackendType).
-			Str("secret_id", backendConfig.SecretID).
-			Str("aws_access_key_id", backendConfig.Session.AccessKeyID).
-			Str("aws_profile", backendConfig.Session.Profile).
-			Msg("failed to retrieve secret value")
-		return nil, err
-	}
-
-	secretValue := make(map[string]string, 0)
-	if backendConfig.ForceString {
-		secretValue["_"] = *out.SecretString
-	} else {
-		if err := json.Unmarshal([]byte(*out.SecretString), &secretValue); err != nil {
-			secretValue["_"] = *out.SecretString
-		}
-	}
-
 	backend := &SecretsManagerBackend{
 		Config: backendConfig,
-		Secret: secretValue,
+		Client: client,
 	}
 	return backend, nil
 }
 
 // GetSecretOutput returns a the value for a specific secret
-func (b *SecretsManagerBackend) GetSecretOutput(secretKey string) secret.Output {
-	if val, ok := b.Secret[secretKey]; ok {
-		return secret.Output{Value: &val, Error: nil}
+func (b *SecretsManagerBackend) GetSecretOutput(secretString string) secret.Output {
+	segments := strings.SplitN(secretString, ";", 2)
+	if len(segments) != 2 {
+		es := "invalid secret format, expected 'secret_id;key'"
+		log.Error().
+			Str("backend_type", b.Config.BackendType).
+			Str("secret_string", secretString).
+			Msg(es)
+		return secret.Output{Value: nil, Error: &es}
 	}
-	es := secret.ErrKeyNotFound.Error()
+	secretID := segments[0]
+	secretKey := segments[1]
 
-	log.Error().
-		Str("backend_type", b.Config.BackendType).
-		Str("secret_id", b.Config.SecretID).
-		Str("secret_key", secretKey).
-		Msg(es)
-	return secret.Output{Value: nil, Error: &es}
+	input := &secretsmanager.GetSecretValueInput{
+		SecretId: &secretID,
+	}
+
+	out, err := b.Client.GetSecretValue(context.TODO(), input)
+	if err != nil {
+		es := err.Error()
+		log.Error().Err(err).
+			Str("backend_type", b.Config.BackendType).
+			Str("secret_id", secretID).
+			Str("aws_access_key_id", b.Config.Session.AccessKeyID).
+			Str("aws_profile", b.Config.Session.Profile).
+			Msg("failed to retrieve secret value")
+		return secret.Output{Value: nil, Error: &es}
+	}
+
+	if out.SecretString == nil {
+		es := "secret string is nil"
+		log.Error().
+			Str("backend_type", b.Config.BackendType).
+			Str("secret_id", secretID).
+			Msg(es)
+		return secret.Output{Value: nil, Error: &es}
+	}
+
+	var secretValue string
+	if b.Config.ForceString {
+		secretValue = *out.SecretString
+	} else {
+		// Try to parse as JSON first
+		var jsonSecrets map[string]string
+		if err := json.Unmarshal([]byte(*out.SecretString), &jsonSecrets); err != nil {
+			// If JSON parsing fails, treat the entire string as the value
+			secretValue = *out.SecretString
+		} else {
+			// If JSON parsing succeeds, look for the specific key
+			if val, ok := jsonSecrets[secretKey]; ok {
+				secretValue = val
+			} else {
+				es := secret.ErrKeyNotFound.Error()
+				log.Error().
+					Str("backend_type", b.Config.BackendType).
+					Str("secret_key", secretKey).
+					Msg(es)
+				return secret.Output{Value: nil, Error: &es}
+			}
+		}
+	}
+
+	return secret.Output{Value: &secretValue, Error: nil}
 }

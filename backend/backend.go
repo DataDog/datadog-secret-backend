@@ -29,7 +29,7 @@ type GenericConnector struct {
 }
 
 // InitBackend initialize the backend based on their configuration
-func (g *GenericConnector) InitBackend(backendType string, backendConfig map[string]interface{}, backendSecrets []string) {
+func (g *GenericConnector) InitBackend(backendType string, backendConfig map[string]interface{}) {
 	backendConfig["backend_type"] = backendType
 	switch backendType {
 	case "aws.secrets":
@@ -54,7 +54,7 @@ func (g *GenericConnector) InitBackend(backendType string, backendConfig map[str
 			g.Backend = backend
 		}
 	case "hashicorp.vault":
-		backend, err := hashicorp.NewVaultBackend(backendConfig, backendSecrets)
+		backend, err := hashicorp.NewVaultBackend(backendConfig, nil)
 		if err != nil {
 			g.Backend = NewErrorBackend(err)
 		} else {
@@ -91,8 +91,8 @@ func (g *GenericConnector) InitBackend(backendType string, backendConfig map[str
 // GetSecretOutputs returns a the value for a list of given secrets of form "<secret key>"
 func (g *GenericConnector) GetSecretOutputs(secrets []string) map[string]secret.Output {
 	secretOutputs := make(map[string]secret.Output, 0)
-	for _, secretKey := range secrets {
-		secretOutputs[secretKey] = g.Backend.GetSecretOutput(secretKey)
+	for _, secretString := range secrets {
+		secretOutputs[secretString] = g.Backend.GetSecretOutput(secretString)
 	}
 	return secretOutputs
 }
