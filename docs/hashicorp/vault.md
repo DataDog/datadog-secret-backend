@@ -92,7 +92,7 @@ api_key: "ENC[/Datadog/Production;apikey]"
 ---
 secret_backend_type: hashicorp.vault
 secret_backend_config:
-  vault_address: vault_address: http://myvaultaddress.net
+  vault_address: http://myvaultaddress.net
   vault_session:
     vault_auth_type: aws
     vault_aws_role: Name-of-IAM-role-attached-to-machine
