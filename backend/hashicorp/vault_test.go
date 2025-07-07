@@ -40,7 +40,6 @@ func TestVaultBackend(t *testing.T) {
 	secretsBackend, err := NewVaultBackend(backendConfig)
 	assert.NoError(t, err)
 
-	// Fix: Use the correct format "secret_path;secret_key"
 	secretOutput := secretsBackend.GetSecretOutput("secret/foo;key1")
 	assert.Equal(t, "value1", *secretOutput.Value)
 	assert.Nil(t, secretOutput.Error)
@@ -75,7 +74,6 @@ func TestVaultBackend_KeyNotFound(t *testing.T) {
 	secretsBackend, err := NewVaultBackend(backendConfig)
 	assert.NoError(t, err)
 
-	// Fix: Use the correct format "secret_path;secret_key"
 	secretOutput := secretsBackend.GetSecretOutput("secret/foo;key_noexist")
 	assert.Nil(t, secretOutput.Value)
 	assert.Equal(t, secret.ErrKeyNotFound.Error(), *secretOutput.Error)
