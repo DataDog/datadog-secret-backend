@@ -52,11 +52,11 @@ secret_backend_config:
 
 ```
 
-**secret_backend_type** must be set to `aws.secrets` and **secret_id** must be set your target AWS Secrets Manager secret friendly name or ARN.
+**secret_backend_type** must be set to `aws.secrets`.
 
 Cross-account Secrets Manager secrets are supported and tested, but require appropriate permissions on the secret as well as a KMS customer managed key. More details on this configuration is available on the AWS Secrets Manager [documentation](https://docs.aws.amazon.com/secretsmanager/latest/userguide/auth-and-access_examples_cross.html).
 
-The backend secret is referenced in your Datadog Agent configuration file using the **ENC** notation. The **secretId** value can be the secret friendly name, e.g. `/DatadogAgent/Production`, or the full ARN format, e.g `arn:aws:secretsmanager:us-east-1:123456789012:secret:/DatadogAgent/Production-FOga1K`. The full ARN format is required when accessing secrets from an a different account where the AWS credential (or sts:AssumeRole credential) is defined. The **secretKey** is the actual secret that you are trying to pull the value of.
+The backend secret is referenced in your Datadog Agent configuration file using the **ENC** notation, taking the form **ENC[secretId;secretKey]**. The **secretId** value can be the secret friendly name, e.g. `/DatadogAgent/Production`, or the full ARN format, e.g `arn:aws:secretsmanager:us-east-1:123456789012:secret:/DatadogAgent/Production-FOga1K`. The full ARN format is required when accessing secrets from an a different account where the AWS credential (or sts:AssumeRole credential) is defined. The **secretKey** is the actual secret that you are trying to pull the value of.
 
 ```yaml
 # /etc/datadog-agent/datadog.yaml
