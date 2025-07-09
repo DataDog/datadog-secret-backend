@@ -30,7 +30,7 @@ secret_backend_config:
 
 **backend_type** must be set to `azure.keyvault` and **keyvaulturl** must be set to your target Azure Key Vault URL.
 
-The backend secret is referenced in your Datadog Agent configuration files using the **ENC** notation.
+The backend secret is referenced in your Datadog Agent configuration file using the **ENC** notation.
 
 ```yaml
 # /etc/datadog-agent/datadog.yaml
@@ -52,9 +52,9 @@ This can be accessed using a semicolon (`;`) to separate the Secret Name from th
 
 ```yaml
 # /etc/datadog-agent/datadog.yml
-api_key: "ENC[MySecret:ddapikey]"
-app_key: "ENC[MySecret:ddappkey]"
-property3: "ENC[MySecret:ddorgname]"
+api_key: "ENC[MySecret;ddapikey]"
+app_key: "ENC[MySecret;ddappkey]"
+property3: "ENC[MySecret;ddorgname]"
 ```
 
 ## Configuration Example
@@ -69,7 +69,7 @@ In the following example, assume the Azure secret name is `MySecretName` with a 
 
 Also assume that the Key Vault's URL is `https://mykeyvault.vault.azure.net`
 
-This example will access the secret from the Datadog Agent configuration yaml file(s) as such:
+Thi below example will access the secret from the Datadog Agent configuration yaml file(s) like so:
 
 ```yaml
 # /etc/datadog-agent/datadog.yaml

@@ -11,7 +11,7 @@ The `datadog-secret-backend` utility currently supports the following Azure serv
 
 ## Azure Authentication
 
-We recommend using Managed Identities in order to authenticate with Azure. This allowed associating cloud resources with AMI accounts, removing the need to put sensitive information in your `datadog.yaml` configuration file.
+We recommend using Managed Identities in order to authenticate with Azure. This lets you associate cloud resources with AMI accounts, removing the need to put sensitive information in your `datadog.yaml` configuration file.
 
 ## Example Configuration
 
