@@ -69,7 +69,7 @@ In the following example, assume the Azure secret name is `MySecretName` with a 
 
 Also assume that the Key Vault's URL is `https://mykeyvault.vault.azure.net`
 
-Thi below example will access the secret from the Datadog Agent configuration yaml file(s) like so:
+The below example will access the secret from the Datadog Agent configuration yaml file(s) like so:
 
 ```yaml
 # /etc/datadog-agent/datadog.yaml
