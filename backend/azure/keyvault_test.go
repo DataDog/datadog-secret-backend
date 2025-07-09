@@ -64,8 +64,6 @@ func TestKeyvaultBackend(t *testing.T) {
 	secretOutput = keyvaultSecretsBackend.GetSecretOutput("key3")
 	assert.Nil(t, secretOutput.Value)
 	assert.Equal(t, secret.ErrKeyNotFound.Error(), *secretOutput.Error)
-
-	assert.Equal(t, 1, 2)
 }
 
 func TestKeyVaultBackend_issue39434(t *testing.T) {
