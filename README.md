@@ -4,7 +4,8 @@
 
 > **datadog-secret-backend** is an implementation of the [Datadog Agent Secrets Management](https://docs.datadoghq.com/agent/guide/secrets-management/?tab=linux) executable supporting multiple backend secret providers.
 
-**IMPORTANT NOTE**: A new major version, `v1`, of `datadog-secret-backend` has been released with a simplified configuration process and a better integration with the Datadog Agent. This new version is not compatible with the `v0` configuration files. `v0` will continue to be maintained on the `v0` branch of this repository and remains compatible with the Datadog Agent.
+**IMPORTANT NOTE**: A new major version, `v1`, of `datadog-secret-backend` has been released with a simplified configuration process and a better integration with the Datadog Agent. This new version is not compatible with the `v0` configuration files. `v0` will continue to be maintained on the `v0` branch of this repository and remains compatible with the Datadog Agent. You can find previous releases of `v0` [here](https://github.com/DataDog/datadog-secret-backend/releases).
+
 The `v1` version comes with the following key improvements:
 1. The `datadog-secret-backend` is now shipped within the Datadog Agent starting with version 7.69.
 2. The backend is now configured directly within the configuration file of the Datadog Agent rather than a dedicated external file.
