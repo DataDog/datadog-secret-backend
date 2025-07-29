@@ -4,6 +4,8 @@
 
 > **datadog-secret-backend** is an implementation of the [Datadog Agent Secrets Management](https://docs.datadoghq.com/agent/guide/secrets-management/?tab=linux) executable supporting multiple backend secret providers.
 
+**IMPORTANT NOTE**: For now, use `v0` of the executable. In this version, you have an additional config file (`datadog-secret-backend.yaml`) where you specify additional config information. Once version 7.69 of the agent comes out, you can use `v1`--in this version, the executable is embedded within the agent (no installation needed!), and furthermore, you don't need an additional config file. Instead, you use the config options `secret_backend_type` and `secret_backend_config` in the datadog.yaml file (no need to set `secret_backend_command`).
+
 ## Supported Backends
 
 | Backend | Provider | Description |
