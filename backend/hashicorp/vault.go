@@ -115,11 +115,26 @@ func NewVaultBackend(backendID string, bc map[string]interface{}) (*VaultBackend
 	}
 	secretValue := make(map[string]string, 0)
 
-	if backendConfig.SecretPath != "" {
-		if len(backendConfig.Secrets) > 0 {
-			for _, item := range backendConfig.Secrets {
-				if data, ok := secret.Data[item]; ok {
-					secretValue[item] = data.(string)
+	if backendConfig.SecretPath != "" && len(backendConfig.Secrets) > 0 {
+		// Check for KV v2 structure: data["data"] as map[string]interface{}
+		var dataMap map[string]interface{}
+		if inner, ok := secret.Data["data"].(map[string]interface{}); ok {
+			// KV v2
+			dataMap = inner
+		} else {
+			// KV v1
+			dataMap = secret.Data
+		}
+
+		for _, item := range backendConfig.Secrets {
+			if data, ok := dataMap[item]; ok {
+				if strVal, ok := data.(string); ok {
+					secretValue[item] = strVal
+				} else {
+					log.Warn().
+						Str("backend_id", backendID).
+						Str("key", item).
+						Msg("Secret value is not a string")
 				}
 			}
 		}
