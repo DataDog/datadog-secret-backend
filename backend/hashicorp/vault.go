@@ -10,6 +10,7 @@ package hashicorp
 import (
 	"context"
 	"errors"
+	"strings"
 
 	"github.com/DataDog/datadog-secret-backend/secret"
 	"github.com/hashicorp/vault/api"
@@ -188,9 +189,9 @@ func (b *VaultBackend) GetSecretOutput(secretKey string) secret.Output {
 func isKVv2Mount(client *api.Client, secretPath string) bool {
 	mounts, err := client.Sys().ListMounts()
 	if err != nil {
-		return false // default to v1 on error
+		return false
 	}
-	mountPrefix := getMountPrefix(secretPath)
+	mountPrefix := getMountPrefix(secretPath, mounts)
 	if mountInfo, ok := mounts[mountPrefix]; ok {
 		if mountInfo.Type == "kv" {
 			if version, ok := mountInfo.Options["version"]; ok && version == "2" {
@@ -201,14 +202,17 @@ func isKVv2Mount(client *api.Client, secretPath string) bool {
 	return false
 }
 
-func getMountPrefix(path string) string {
-	if len(path) > 0 && path[0] == '/' {
-		path = path[1:]
+func getMountPrefix(secretPath string, mounts map[string]*api.MountOutput) string {
+	path := strings.TrimPrefix(secretPath, "/")
+	var bestMatch string
+	for mount := range mounts {
+		if strings.HasPrefix(path, mount) {
+			if len(mount) > len(bestMatch) {
+				bestMatch = mount
+			}
+		}
 	}
-	if idx := indexFirstSlash(path); idx >= 0 {
-		return path[:idx+1]
-	}
-	return path + "/"
+	return bestMatch
 }
 
 func insertDataPath(path string) string {
