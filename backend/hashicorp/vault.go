@@ -189,7 +189,6 @@ func (b *VaultBackend) GetSecretOutput(secretKey string) secret.Output {
 func isKVv2Mount(client *api.Client, secretPath string) (bool, string) {
 	mounts, err := client.Sys().ListMounts()
 	if err != nil {
-		log.Warn().Err(err).Msg("Failed to list Vault mounts")
 		return false, ""
 	}
 
