@@ -189,30 +189,38 @@ func (b *VaultBackend) GetSecretOutput(secretKey string) secret.Output {
 func isKVv2Mount(client *api.Client, secretPath string) bool {
 	mounts, err := client.Sys().ListMounts()
 	if err != nil {
+		log.Warn().Err(err).Msg("Failed to list Vault mounts")
 		return false
 	}
-	mountPrefix := getMountPrefix(secretPath, mounts)
-	if mountInfo, ok := mounts[mountPrefix]; ok {
-		if mountInfo.Type == "kv" {
-			if version, ok := mountInfo.Options["version"]; ok && version == "2" {
-				return true
-			}
-		}
-	}
-	return false
-}
 
-func getMountPrefix(secretPath string, mounts map[string]*api.MountOutput) string {
-	path := strings.TrimPrefix(secretPath, "/")
-	var bestMatch string
-	for mount := range mounts {
-		if strings.HasPrefix(path, mount) {
-			if len(mount) > len(bestMatch) {
-				bestMatch = mount
+	cleanPath := strings.TrimPrefix(secretPath, "/")
+	parts := strings.Split(cleanPath, "/")
+
+	// Try progressively longer prefixes: Datadog/, Datadog/Production/, etc.
+	for i := 1; i <= len(parts); i++ {
+		prefix := strings.Join(parts[:i], "/") + "/"
+
+		if mountInfo, ok := mounts[prefix]; ok {
+			if mountInfo.Type == "kv" {
+				version := mountInfo.Options["version"]
+				log.Debug().
+					Str("mount_prefix", prefix).
+					Str("kv_version", version).
+					Msg("Detected mount during KV version check")
+
+				if version == "2" {
+					return true
+				}
+				// short-circuit: known KV, but not v2
+				return false
 			}
 		}
 	}
-	return bestMatch
+
+	log.Debug().
+		Str("secret_path", secretPath).
+		Msg("No matching mount prefix found for KV v2")
+	return false
 }
 
 func insertDataPath(path string) string {
