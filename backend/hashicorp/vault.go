@@ -107,34 +107,54 @@ func NewVaultBackend(backendID string, bc map[string]interface{}) (*VaultBackend
 		return nil, errors.New("No auth method or token provided")
 	}
 
-	secret, err := client.Logical().Read(backendConfig.SecretPath)
+	// KV version detection
+	isKVv2 := isKVv2Mount(client, backendConfig.SecretPath)
+
+	readPath := backendConfig.SecretPath
+	if isKVv2 {
+		// If the mount path is set as /Example/Path, and the secret path is set at /Example/Path/Secret,
+		// then we need to query from /Example/Path/data/Secret in kv v2, and /Example/Path/Secret in kv v1.
+		readPath = insertDataPath(backendConfig.SecretPath)
+	}
+
+	secret, err := client.Logical().Read(readPath)
 	if err != nil {
 		log.Error().Err(err).Str("backend_id", backendID).
+			Str("read_path", readPath).
 			Msg("Failed to read secret")
 		return nil, err
 	}
-	secretValue := make(map[string]string, 0)
+	if secret == nil {
+		log.Error().Str("backend_id", backendID).
+			Str("read_path", readPath).
+			Msg("Vault returned nil secret")
+		return nil, errors.New("vault returned nil secret")
+	}
 
+	secretValue := make(map[string]string)
 	if backendConfig.SecretPath != "" && len(backendConfig.Secrets) > 0 {
-		// Check for KV v2 structure: data["data"] as map[string]interface{}
 		var dataMap map[string]interface{}
-		if inner, ok := secret.Data["data"].(map[string]interface{}); ok {
-			// KV v2
-			dataMap = inner
+		if isKVv2 {
+			if inner, ok := secret.Data["data"].(map[string]interface{}); ok {
+				dataMap = inner
+			} else {
+				log.Warn().Str("backend_id", backendID).
+					Msg("Secret data is not in expected format for KV v2")
+				return nil, errors.New("secret data is not in expected format for KV v2")
+			}
 		} else {
-			// KV v1
 			dataMap = secret.Data
 		}
 
 		for _, item := range backendConfig.Secrets {
-			if data, ok := dataMap[item]; ok {
-				if strVal, ok := data.(string); ok {
-					secretValue[item] = strVal
-				} else {
-					log.Warn().
-						Str("backend_id", backendID).
-						Str("key", item).
-						Msg("Secret value is not a string")
+			if dataMap != nil {
+				if data, ok := dataMap[item]; ok {
+					if strVal, ok := data.(string); ok {
+						secretValue[item] = strVal
+					} else {
+						log.Warn().Str("backend_id", backendID).Str("key", item).
+							Msg("Secret value is not a string")
+					}
 				}
 			}
 		}
@@ -163,4 +183,52 @@ func (b *VaultBackend) GetSecretOutput(secretKey string) secret.Output {
 		Str("secret_key", secretKey).
 		Msg("failed to retrieve secrets")
 	return secret.Output{Value: nil, Error: &es}
+}
+
+func isKVv2Mount(client *api.Client, secretPath string) bool {
+	mounts, err := client.Sys().ListMounts()
+	if err != nil {
+		return false // default to v1 on error
+	}
+	mountPrefix := getMountPrefix(secretPath)
+	if mountInfo, ok := mounts[mountPrefix]; ok {
+		if mountInfo.Type == "kv" {
+			if version, ok := mountInfo.Options["version"]; ok && version == "2" {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func getMountPrefix(path string) string {
+	if len(path) > 0 && path[0] == '/' {
+		path = path[1:]
+	}
+	if idx := indexFirstSlash(path); idx >= 0 {
+		return path[:idx+1]
+	}
+	return path + "/"
+}
+
+func insertDataPath(path string) string {
+	if path == "" {
+		return path
+	}
+	if path[0] == '/' {
+		path = path[1:]
+	}
+	if idx := indexFirstSlash(path); idx >= 0 {
+		return path[:idx] + "/data" + path[idx:]
+	}
+	return path + "/data"
+}
+
+func indexFirstSlash(s string) int {
+	for i := 0; i < len(s); i++ {
+		if s[i] == '/' {
+			return i
+		}
+	}
+	return -1
 }

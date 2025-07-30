@@ -114,21 +114,29 @@ func TestVaultBackend_KVV2Support(t *testing.T) {
 	ln, client, token := createTestVault(t)
 	defer ln.Close()
 
+	err := client.Sys().Mount("kv2/", &api.MountInput{
+		Type: "kv",
+		Options: map[string]string{
+			"version": "2",
+		},
+	})
+	assert.NoError(t, err)
+
 	// Simulate KV v2 structure: {"data": {"key1": "value1", "key2": "value2"}, "metadata": {"something": "else"}}
-	_, err := client.Logical().Write("secret/foo", map[string]interface{}{
+	_, err = client.Logical().Write("kv2/data/foo", map[string]interface{}{
 		"data": map[string]interface{}{
 			"key1": "value1",
 			"key2": "value2",
 		},
 		"metadata": map[string]interface{}{
-			"version": 1,
+			"custom_metadata": "custom_value",
 		},
 	})
 	assert.NoError(t, err)
 
 	backendConfig := map[string]interface{}{
 		"vault_address": client.Address(),
-		"secret_path":   "secret/foo", // Simulated KV v2 response
+		"secret_path":   "kv2/foo", // Simulated KV v2 response
 		"secrets":       []string{"key1", "key2"},
 		"backend_type":  "hashicorp.vault",
 		"vault_token":   token,
