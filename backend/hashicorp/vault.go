@@ -108,14 +108,14 @@ func NewVaultBackend(backendID string, bc map[string]interface{}) (*VaultBackend
 		return nil, errors.New("No auth method or token provided")
 	}
 
-	// KV version detection
-	isKVv2 := isKVv2Mount(client, backendConfig.SecretPath)
+	// KV version detection:
+	// If the mount path is set as /Example/Path, and the secret path is set at /Example/Path/Secret,
+	// then we need to query from /Example/Path/data/Secret in kv v2, and /Example/Path/Secret in kv v1.
+	isKVv2, mountPrefix := isKVv2Mount(client, backendConfig.SecretPath)
 
 	readPath := backendConfig.SecretPath
 	if isKVv2 {
-		// If the mount path is set as /Example/Path, and the secret path is set at /Example/Path/Secret,
-		// then we need to query from /Example/Path/data/Secret in kv v2, and /Example/Path/Secret in kv v1.
-		readPath = insertDataPath(backendConfig.SecretPath)
+		readPath = insertDataPath(backendConfig.SecretPath, mountPrefix)
 	}
 
 	secret, err := client.Logical().Read(readPath)
@@ -186,11 +186,11 @@ func (b *VaultBackend) GetSecretOutput(secretKey string) secret.Output {
 	return secret.Output{Value: nil, Error: &es}
 }
 
-func isKVv2Mount(client *api.Client, secretPath string) bool {
+func isKVv2Mount(client *api.Client, secretPath string) (bool, string) {
 	mounts, err := client.Sys().ListMounts()
 	if err != nil {
 		log.Warn().Err(err).Msg("Failed to list Vault mounts")
-		return false
+		return false, ""
 	}
 
 	cleanPath := strings.TrimPrefix(secretPath, "/")
@@ -208,11 +208,7 @@ func isKVv2Mount(client *api.Client, secretPath string) bool {
 					Str("kv_version", version).
 					Msg("Detected mount during KV version check")
 
-				if version == "2" {
-					return true
-				}
-				// short-circuit: known KV, but not v2
-				return false
+				return version == "2", prefix
 			}
 		}
 	}
@@ -220,27 +216,27 @@ func isKVv2Mount(client *api.Client, secretPath string) bool {
 	log.Debug().
 		Str("secret_path", secretPath).
 		Msg("No matching mount prefix found for KV v2")
-	return false
+	return false, ""
 }
 
-func insertDataPath(path string) string {
-	if path == "" {
-		return path
-	}
-	if path[0] == '/' {
-		path = path[1:]
-	}
-	if idx := indexFirstSlash(path); idx >= 0 {
-		return path[:idx] + "/data" + path[idx:]
-	}
-	return path + "/data"
-}
+func insertDataPath(secretPath, mountPrefix string) string {
+	trimmedSecret := strings.TrimPrefix(secretPath, "/")
+	trimmedMount := strings.TrimPrefix(mountPrefix, "/")
 
-func indexFirstSlash(s string) int {
-	for i := 0; i < len(s); i++ {
-		if s[i] == '/' {
-			return i
-		}
+	if !strings.HasPrefix(trimmedSecret, trimmedMount) {
+		log.Warn().
+			Str("secret_path", secretPath).
+			Str("mount_prefix", mountPrefix).
+			Msg("Secret path does not match mount prefix; skipping data insertion")
+		return secretPath
 	}
-	return -1
+
+	// remove mount prefix from path
+	relative := strings.TrimPrefix(trimmedSecret, trimmedMount)
+	relative = strings.TrimPrefix(relative, "/")
+
+	if relative == "" {
+		return trimmedMount + "data"
+	}
+	return trimmedMount + "data/" + relative
 }
