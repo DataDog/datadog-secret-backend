@@ -4,7 +4,14 @@
 
 > **datadog-secret-backend** is an implementation of the [Datadog Agent Secrets Management](https://docs.datadoghq.com/agent/guide/secrets-management/?tab=linux) executable supporting multiple backend secret providers.
 
-**IMPORTANT NOTE**: For now, use `v0` of the executable. In this version, you have an additional config file (`datadog-secret-backend.yaml`) where you specify additional config information. Once version 7.69 of the agent comes out, you can use `v1`--in this version, the executable is embedded within the agent (no installation needed!), and furthermore, you don't need an additional config file. Instead, you use the config options `secret_backend_type` and `secret_backend_config` in the datadog.yaml file (no need to set `secret_backend_command`).
+**IMPORTANT NOTE**: If you're using Agent version 7.69 or newer, setup is significantly simplified because the datadog-secret-backend binary is now bundled inside the Agent itself. In that case, you don’t need to install or manage the binary separately--please use the [secret_backend_type](https://github.com/DataDog/datadog-agent/blob/main/pkg/config/config_template.yaml#L867) and [secret_backend_config](https://github.com/DataDog/datadog-agent/blob/main/pkg/config/config_template.yaml#L880) config options in your datadog.yaml file instead. We will handle everything else.
+
+## Quick Start (Agent Version < 7.69)
+
+1. Ensure that your agent is of version < 7.69 and you want to install the secret backend manually: Follow the [manual installation](https://github.com/DataDog/datadog-secret-backend#installation) instructions below.
+2. Configure the backend type and its settings: Refer to the [supported backends](https://github.com/DataDog/datadog-secret-backend#supported-backends) section for more information. 
+    1. You should reference secrets in your datadog.yaml file using the ENC[backend_id:secret_id] format.
+    2. Any necessary configuration will be specified in a file named `datadog-secret-backend.yaml` which should be located in the same directory as the installed `datadog-secret-backend` executable.
 
 ## Supported Backends
 
@@ -17,7 +24,7 @@
 | [file.json](docs/file/json.md) | [file](docs/file/README.md) | Datadog secrets in local JSON files|
 | [file.yaml](docs/file/yaml.md) | [file](docs/file/README.md) | Datadog secrets in local YAML files|
 
-## Installation
+## Manual Installation
 
 1. Make a new folder to hold all the files required for this module in one place (in this example will use
    `datadog-secret-backend`:
@@ -34,18 +41,18 @@
 
     ```
     ## Linux (amd64)
-    curl -L https://github.com/DataDog/datadog-secret-backend/releases/latest/download/datadog-secret-backend-linux-amd64.tar.gz \ 
+    curl -L https://github.com/DataDog/datadog-secret-backend/releases/download/v0.2.5/datadog-secret-backend-linux-amd64.tar.gz \ 
     -o /tmp/datadog-secret-backend-linux-amd64.tar.gz
 
     ## Linux (386)
-    curl -L https://github.com/DataDog/datadog-secret-backend/releases/latest/download/datadog-secret-backend-linux-386.tar.gz \ 
+    curl -L https://github.com/DataDog/datadog-secret-backend/releases/download/v0.2.5/datadog-secret-backend-linux-386.tar.gz \ 
     -o /tmp/datadog-secret-backend-linux-386.tar.gz
 
     ## Windows (amd64)
-    Invoke-WebRequest https://github.com/DataDog/datadog-secret-backend/releases/latest/download/datadog-secret-backend-windows-amd64.zip -OutFile 'C:\Program Files\datadog-secret-backend\datadog-secret-backend-windows-amd64.zip'
+    Invoke-WebRequest https://github.com/DataDog/datadog-secret-backend/releases/download/v0.2.5/datadog-secret-backend-windows-amd64.zip -OutFile 'C:\Program Files\datadog-secret-backend\datadog-secret-backend-windows-amd64.zip'
 
     ## Windows (386)
-    Invoke-WebRequest https://github.com/DataDog/datadog-secret-backend/releases/latest/download/datadog-secret-backend-windows-386.zip -OutFile 'C:\Program Files\datadog-secret-backend\datadog-secret-backend-windows-386.zip'
+    Invoke-WebRequest https://github.com/DataDog/datadog-secret-backend/releases/download/v0.2.5/datadog-secret-backend-windows-386.zip -OutFile 'C:\Program Files\datadog-secret-backend\datadog-secret-backend-windows-386.zip'
     ```
 
 3. Once you have the file from the github repo, you'll need to unzip it to get the executable:
@@ -77,10 +84,10 @@
     chmod 500 /etc/datadog-secret-backend/datadog-secret-backend
 
     ## Windows
-    1) Right click on the "datadog-secret-backend.exe" and select "Properties".
-    2) Click on the Security tab.
-    3) Edit the permissions, disable permission inheritance, and then remove all existing permissions.
-    4) Add full access to the "ddagentuser" and save your permissions. 
+    1. Right click on the "datadog-secret-backend.exe" and select "Properties".
+    2. Click on the Security tab.
+    3. Edit the permissions, disable permission inheritance, and then remove all existing permissions.
+    4. Add full access to the "ddagentuser" and save your permissions. 
     ```
 
 6. [Provide an executable path](https://docs.datadoghq.com/agent/configuration/secrets-management/?tab=linux#providing-an-executable) to the datadog agent via the main `datadog.yaml` file using the `secret_backend_command` variable:
