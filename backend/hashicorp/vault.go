@@ -139,7 +139,7 @@ func NewVaultBackend(backendID string, bc map[string]interface{}) (*VaultBackend
 			if inner, ok := secret.Data["data"].(map[string]interface{}); ok {
 				dataMap = inner
 			} else {
-				log.Warn().Str("backend_id", backendID).
+				log.Error().Str("backend_id", backendID).
 					Msg("Secret data is not in expected format for KV v2")
 				return nil, errors.New("secret data is not in expected format for KV v2")
 			}
@@ -147,15 +147,20 @@ func NewVaultBackend(backendID string, bc map[string]interface{}) (*VaultBackend
 			dataMap = secret.Data
 		}
 
+		if dataMap == nil {
+			log.Error().Str("backend_id", backendID).
+				Msg("Secret data is nil")
+			return nil, errors.New("There is no actual data in the secret")
+		}
+
 		for _, item := range backendConfig.Secrets {
-			if dataMap != nil {
-				if data, ok := dataMap[item]; ok {
-					if strVal, ok := data.(string); ok {
-						secretValue[item] = strVal
-					} else {
-						log.Warn().Str("backend_id", backendID).Str("key", item).
-							Msg("Secret value is not a string")
-					}
+			if data, ok := dataMap[item]; ok {
+				if strVal, ok := data.(string); ok {
+					secretValue[item] = strVal
+				} else {
+					log.Error().Str("backend_id", backendID).
+						Str("key", item).Msg("Secret value is not a string")
+					return nil, errors.New("Secret value is not a string")
 				}
 			}
 		}
