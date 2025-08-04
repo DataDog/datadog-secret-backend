@@ -76,7 +76,7 @@
     Remove-Item 'C:\Program Files\datadog-secret-backend\datadog-secret-backend-windows-amd64.zip'
     ```
 
-5. Update the executable to have the required [Agent security permissions](https://docs.datadoghq.com/agent/configuration/secrets-management/?tab=linux#agent-security-requirements).
+5. Update the executable to have the required [Agent security permissions](https://docs.datadoghq.com/agent/configuration/secrets-management/#agent-security-requirements).
 
 6. [Provide an executable path](https://docs.datadoghq.com/agent/configuration/secrets-management/?tab=linux#providing-an-executable) to the datadog agent via the main `datadog.yaml` file using the `secret_backend_command` variable:
 
