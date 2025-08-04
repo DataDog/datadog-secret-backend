@@ -10,6 +10,7 @@ package hashicorp
 import (
 	"context"
 	"errors"
+	"strings"
 
 	"github.com/DataDog/datadog-secret-backend/secret"
 	"github.com/hashicorp/vault/api"
@@ -107,19 +108,59 @@ func NewVaultBackend(backendID string, bc map[string]interface{}) (*VaultBackend
 		return nil, errors.New("No auth method or token provided")
 	}
 
-	secret, err := client.Logical().Read(backendConfig.SecretPath)
+	// KV version detection:
+	// If the mount path is set as /Example/Path, and the secret path is set at /Example/Path/Secret,
+	// then we need to query from /Example/Path/data/Secret in kv v2, and /Example/Path/Secret in kv v1.
+	isKVv2, mountPrefix := isKVv2Mount(client, backendConfig.SecretPath)
+
+	readPath := backendConfig.SecretPath
+	if isKVv2 {
+		readPath = insertDataPath(backendConfig.SecretPath, mountPrefix)
+	}
+
+	secret, err := client.Logical().Read(readPath)
 	if err != nil {
 		log.Error().Err(err).Str("backend_id", backendID).
+			Str("read_path", readPath).
 			Msg("Failed to read secret")
 		return nil, err
 	}
-	secretValue := make(map[string]string, 0)
+	if secret == nil {
+		log.Error().Str("backend_id", backendID).
+			Str("read_path", readPath).
+			Msg("Vault returned nil secret")
+		return nil, errors.New("vault returned nil secret")
+	}
 
-	if backendConfig.SecretPath != "" {
-		if len(backendConfig.Secrets) > 0 {
-			for _, item := range backendConfig.Secrets {
-				if data, ok := secret.Data[item]; ok {
-					secretValue[item] = data.(string)
+	secretValue := make(map[string]string)
+	if backendConfig.SecretPath != "" && len(backendConfig.Secrets) > 0 {
+		var dataMap map[string]interface{}
+		if isKVv2 {
+			if inner, ok := secret.Data["data"].(map[string]interface{}); ok {
+				dataMap = inner
+			} else {
+				log.Error().Str("backend_id", backendID).
+					Msg("Secret data is not in expected format for KV v2")
+				return nil, errors.New("secret data is not in expected format for KV v2")
+			}
+		} else {
+			dataMap = secret.Data
+		}
+
+		if dataMap == nil {
+			log.Error().Str("backend_id", backendID).
+				Msg("Secret data is nil")
+			return nil, errors.New("There is no actual data in the secret")
+		}
+
+		for _, item := range backendConfig.Secrets {
+			if data, ok := dataMap[item]; ok {
+				if strVal, ok := data.(string); ok {
+					secretValue[item] = strVal
+				} else {
+					log.Error().Str("backend_id", backendID).
+						Str("key", item).Msg("Secret value is not a string")
+					return nil, errors.New("Secret value is not a string")
 				}
 			}
 		}
@@ -148,4 +189,58 @@ func (b *VaultBackend) GetSecretOutput(secretKey string) secret.Output {
 		Str("secret_key", secretKey).
 		Msg("failed to retrieve secrets")
 	return secret.Output{Value: nil, Error: &es}
+}
+
+func isKVv2Mount(client *api.Client, secretPath string) (bool, string) {
+	mounts, err := client.Sys().ListMounts()
+	if err != nil {
+		return false, ""
+	}
+
+	cleanPath := strings.TrimPrefix(secretPath, "/")
+	parts := strings.Split(cleanPath, "/")
+
+	// Try progressively longer prefixes: Datadog/, Datadog/Production/, etc.
+	for i := 1; i <= len(parts); i++ {
+		prefix := strings.Join(parts[:i], "/") + "/"
+
+		if mountInfo, ok := mounts[prefix]; ok {
+			if mountInfo.Type == "kv" {
+				version := mountInfo.Options["version"]
+				log.Debug().
+					Str("mount_prefix", prefix).
+					Str("kv_version", version).
+					Msg("Detected mount during KV version check")
+
+				return version == "2", prefix
+			}
+		}
+	}
+
+	log.Debug().
+		Str("secret_path", secretPath).
+		Msg("No matching mount prefix found for KV v2")
+	return false, ""
+}
+
+func insertDataPath(secretPath, mountPrefix string) string {
+	trimmedSecret := strings.TrimPrefix(secretPath, "/")
+	trimmedMount := strings.TrimPrefix(mountPrefix, "/")
+
+	if !strings.HasPrefix(trimmedSecret, trimmedMount) {
+		log.Warn().
+			Str("secret_path", secretPath).
+			Str("mount_prefix", mountPrefix).
+			Msg("Secret path does not match mount prefix; skipping data insertion")
+		return secretPath
+	}
+
+	// remove mount prefix from path
+	relative := strings.TrimPrefix(trimmedSecret, trimmedMount)
+	relative = strings.TrimPrefix(relative, "/")
+
+	if relative == "" {
+		return trimmedMount + "data"
+	}
+	return trimmedMount + "data/" + relative
 }

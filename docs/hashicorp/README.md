@@ -6,10 +6,10 @@ The `datadog-secret-backend` utility currently supports the following Hashicorp 
 
 | Backend Type | Hashicorp Service |
 | --- | --- |
-| [hashicorp.vault](vault.md) | [Hashicorp Vault](https://learn.hashicorp.com/tutorials/vault/static-secrets) |
+| [hashicorp.vault](vault.md) | [Hashicorp Vault (Secrets Engine Version 1)](https://learn.hashicorp.com/tutorials/vault/static-secrets) |
+| [hashicorp.vault](vault.md) | [Hashicorp Vault (Secrets Engine Version 2)](https://learn.hashicorp.com/tutorials/vault/static-secrets) |
 
-
-## Hashicorp ault Session
+## Hashicorp Vault Session
 
 Hashicorp Vault supports a variety of authentication methods. The ones currently supported by this module are as follows:
 

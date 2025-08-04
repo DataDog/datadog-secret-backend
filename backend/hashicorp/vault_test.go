@@ -109,3 +109,51 @@ func createTestVault(t *testing.T) (net.Listener, *api.Client, string) {
 
 	return ln, client, rootToken
 }
+
+func TestVaultBackend_KVV2Support(t *testing.T) {
+	ln, client, token := createTestVault(t)
+	defer ln.Close()
+
+	err := client.Sys().Mount("kv2/", &api.MountInput{
+		Type: "kv",
+		Options: map[string]string{
+			"version": "2",
+		},
+	})
+	assert.NoError(t, err)
+
+	// Simulate KV v2 structure: {"data": {"key1": "value1", "key2": "value2"}, "metadata": {"something": "else"}}
+	_, err = client.Logical().Write("kv2/data/foo", map[string]interface{}{
+		"data": map[string]interface{}{
+			"key1": "value1",
+			"key2": "value2",
+		},
+		"metadata": map[string]interface{}{
+			"custom_metadata": "custom_value",
+		},
+	})
+	assert.NoError(t, err)
+
+	backendConfig := map[string]interface{}{
+		"vault_address": client.Address(),
+		"secret_path":   "kv2/foo", // Simulated KV v2 response
+		"secrets":       []string{"key1", "key2"},
+		"backend_type":  "hashicorp.vault",
+		"vault_token":   token,
+	}
+
+	secretsBackend, err := NewVaultBackend("vault-backend", backendConfig)
+	assert.NoError(t, err)
+
+	secretOutput := secretsBackend.GetSecretOutput("key1")
+	assert.Equal(t, "value1", *secretOutput.Value)
+	assert.Nil(t, secretOutput.Error)
+
+	secretOutput = secretsBackend.GetSecretOutput("key2")
+	assert.Equal(t, "value2", *secretOutput.Value)
+	assert.Nil(t, secretOutput.Error)
+
+	secretOutput = secretsBackend.GetSecretOutput("not_there")
+	assert.Nil(t, secretOutput.Value)
+	assert.Equal(t, secret.ErrKeyNotFound.Error(), *secretOutput.Error)
+}
