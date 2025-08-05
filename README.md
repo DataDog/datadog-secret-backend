@@ -41,18 +41,18 @@
 
     ```
     ## Linux (amd64)
-    curl -L https://github.com/DataDog/datadog-secret-backend/releases/download/v0.2.5/datadog-secret-backend-linux-amd64.tar.gz \ 
+    curl -L https://github.com/DataDog/datadog-secret-backend/releases/download/v0.3.0/datadog-secret-backend-linux-amd64.tar.gz \ 
     -o /tmp/datadog-secret-backend-linux-amd64.tar.gz
 
     ## Linux (386)
-    curl -L https://github.com/DataDog/datadog-secret-backend/releases/download/v0.2.5/datadog-secret-backend-linux-386.tar.gz \ 
+    curl -L https://github.com/DataDog/datadog-secret-backend/releases/download/v0.3.0/datadog-secret-backend-linux-386.tar.gz \ 
     -o /tmp/datadog-secret-backend-linux-386.tar.gz
 
     ## Windows (amd64)
-    Invoke-WebRequest https://github.com/DataDog/datadog-secret-backend/releases/download/v0.2.5/datadog-secret-backend-windows-amd64.zip -OutFile 'C:\Program Files\datadog-secret-backend\datadog-secret-backend-windows-amd64.zip'
+    Invoke-WebRequest https://github.com/DataDog/datadog-secret-backend/releases/download/v0.3.0/datadog-secret-backend-windows-amd64.zip -OutFile 'C:\Program Files\datadog-secret-backend\datadog-secret-backend-windows-amd64.zip'
 
     ## Windows (386)
-    Invoke-WebRequest https://github.com/DataDog/datadog-secret-backend/releases/download/v0.2.5/datadog-secret-backend-windows-386.zip -OutFile 'C:\Program Files\datadog-secret-backend\datadog-secret-backend-windows-386.zip'
+    Invoke-WebRequest https://github.com/DataDog/datadog-secret-backend/releases/download/v0.3.0/datadog-secret-backend-windows-386.zip -OutFile 'C:\Program Files\datadog-secret-backend\datadog-secret-backend-windows-386.zip'
     ```
 
 3. Once you have the file from the github repo, you'll need to unzip it to get the executable:

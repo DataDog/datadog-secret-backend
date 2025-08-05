@@ -1,5 +1,9 @@
 # CHANGELOG - datadog-secret-backend
 
+## 0.3.0 / 2025-08-05
+
+* Adding support for version 2 of the Hashicorp Secrets Engine.
+
 ## 0.2.5 / 2025-06-27
 
 * Bump go version to `1.24.4`

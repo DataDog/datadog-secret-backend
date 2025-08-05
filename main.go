@@ -24,7 +24,7 @@ import (
 	"github.com/DataDog/datadog-secret-backend/secret"
 )
 
-const appVersion = "0.2.5"
+const appVersion = "0.3.0"
 
 func init() {
 	zerolog.TimestampFunc = func() time.Time {
