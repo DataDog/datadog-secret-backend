@@ -214,8 +214,6 @@ github.com/bufbuild/protocompile v0.10.0/go.mod h1:G9qQIQo0xZ6Uyj6CMNz0saGmx2so+
 github.com/cenkalti/backoff v2.2.1+incompatible h1:tNowT99t7UNflLxfYYSlKYsBpXdEet03Pg2g16Swow4=
 github.com/cenkalti/backoff v2.2.1+incompatible/go.mod h1:90ReRw6GdpyfrHakVjL/QHaoyV4aDUVVkXQJJJ3NXXM=
 github.com/cenkalti/backoff/v3 v3.0.0/go.mod h1:cIeZDE3IrqwwJl6VUwCN6trj1oXrTS4rc0ij+ULvLYs=
-github.com/cenkalti/backoff/v3 v3.2.2 h1:cfUAAO3yvKMYKPrvhDuHSwQnhZNk/RMHKdZqKTxfm6M=
-github.com/cenkalti/backoff/v3 v3.2.2/go.mod h1:cIeZDE3IrqwwJl6VUwCN6trj1oXrTS4rc0ij+ULvLYs=
 github.com/cenkalti/backoff/v4 v4.3.0 h1:MyRJ/UdXutAwSAT+s3wNd7MfTIcy71VQueUuFK343L8=
 github.com/cenkalti/backoff/v4 v4.3.0/go.mod h1:Y3VNntkOUPxTVeUxJ/G5vcM//AlwfmyYozVcomhLiZE=
 github.com/census-instrumentation/opencensus-proto v0.2.1/go.mod h1:f6KPmirojxKA12rnyqOA5BBL4O983OfeGPqjHWSTneU=
@@ -770,8 +768,8 @@ github.com/hashicorp/vault/api/auth/ldap v0.6.0 h1:uvGmLzWQtZ0VZ8TCT2zTfdBNFHiFE
 github.com/hashicorp/vault/api/auth/ldap v0.6.0/go.mod h1:XE11jJa/5/2wyY1kageQrOlE/q2pmviegh4i5sLf7io=
 github.com/hashicorp/vault/api/auth/userpass v0.6.0 h1:wpiGIbS7CMdqqqs7GNQMO+AQW6DxecGBDTgxaBW5R9Q=
 github.com/hashicorp/vault/api/auth/userpass v0.6.0/go.mod h1:BYLic7wPxTqn35FX0nKU2oCdZYEDJ/UCFQY0zO4AImI=
-github.com/hashicorp/vault/sdk v0.18.0 h1:8RWVn4P4HOU5lct0GDeZS9fysJHyOJwR+Ulb5n8NPnI=
-github.com/hashicorp/vault/sdk v0.18.0/go.mod h1:8LGmRHQBzlRSuUlyhXBy5MlMaNleS5K8LO4zc4qr1HE=
+github.com/hashicorp/vault/sdk v0.18.1-0.20250806020539-824d12909d5b h1:P5329B0v0sI9A9x6TB8XatT3bznq/7iZr8ZEuteqJ4Q=
+github.com/hashicorp/vault/sdk v0.18.1-0.20250806020539-824d12909d5b/go.mod h1:Vj/YhiQ6h04WIUeXVUmFf8EDt+yBJRcw/eIBtdti7hs=
 github.com/hashicorp/vic v1.5.1-0.20190403131502-bbfe86ec9443 h1:O/pT5C1Q3mVXMyuqg7yuAWUg/jMZR1/0QTzTRdNR6Uw=
 github.com/hashicorp/vic v1.5.1-0.20190403131502-bbfe86ec9443/go.mod h1:bEpDU35nTu0ey1EXjwNwPjI9xErAsoOCmcMb9GKvyxo=
 github.com/hashicorp/yamux v0.1.2 h1:XtB8kyFOyHXYVFnwT5C3+Bdo8gArse7j2AQ0DA0Uey8=
