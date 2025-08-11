@@ -4,7 +4,7 @@
 
 > **datadog-secret-backend** is an implementation of the [Datadog Agent Secrets Management](https://docs.datadoghq.com/agent/guide/secrets-management/?tab=linux) executable supporting multiple backend secret providers.
 
-**IMPORTANT NOTE**: If you're using a non-Windows Agent version 7.69 or newer, setup is significantly simplified because the datadog-secret-backend binary is now bundled inside the Agent itself. In that case, you don’t need to install or manage the binary separately--please use the [secret_backend_type](https://github.com/DataDog/datadog-agent/blob/main/pkg/config/config_template.yaml#L867) and [secret_backend_config](https://github.com/DataDog/datadog-agent/blob/main/pkg/config/config_template.yaml#L880) config options in your datadog.yaml file instead.
+**IMPORTANT NOTE**: If you're using a non-Windows Agent version 7.69 or newer, setup is significantly simplified because the datadog-secret-backend binary is now bundled inside the Agent itself. In that case, you don’t need to install or manage the binary separately--please use the [secret_backend_type](https://github.com/DataDog/datadog-agent/blob/main/pkg/config/config_template.yaml#L867) and [secret_backend_config](https://github.com/DataDog/datadog-agent/blob/main/pkg/config/config_template.yaml#L880) config options in your datadog.yaml file instead. Windows support for this feature will be added in the near future.
 
 ## Quick Start (Agent Version < 7.69 or using Windows)
 
