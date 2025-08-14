@@ -8,6 +8,14 @@ updates:
     labels:
     - dependencies
 
+  - package-ecosystem: "github-actions"
+    target-branch: main
+    directory: "/"
+    schedule:
+      interval: "daily"
+    labels:
+    - dependencies
+
   - package-ecosystem: "gomod"
     target-branch: v1
     directory: "/"
