@@ -8,7 +8,7 @@
 
 ## Quick Start (Agent Version < 7.70 or FIPS-enabled Agent)
 
-1. For agents before < `7.70.0`, or FIPS-enabled Agents of any version, you need to install the secret backend manually: Follow the [manual installation](https://github.com/DataDog/datadog-secret-backend#installation) instructions below.
+1. For agents before < `7.70.0`, or FIPS-enabled agents of any version, you need to install the secret backend manually: Follow the [manual installation](https://github.com/DataDog/datadog-secret-backend#installation) instructions below.
 2. Configure the backend type and its settings: Refer to the [supported backends](https://github.com/DataDog/datadog-secret-backend#supported-backends) section for more information. 
     1. You should reference secrets in your datadog.yaml file using the ENC[backend_id:secret_id] format. Here is [more information](https://docs.datadoghq.com/agent/configuration/secrets-management/?tab=linux#how-it-works) on how this works. 
     2. Any necessary configuration will be specified in a file named `datadog-secret-backend.yaml` which should be located in the same directory as the installed `datadog-secret-backend` executable. 
