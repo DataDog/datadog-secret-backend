@@ -58,15 +58,7 @@ We HIGHLY recommend that you authenticate using this method if you are running y
   ]
 }
 ```
-After following the General Instructions, you will also need to write an authentication-specific vault policy. Run:
-```
-vault write auth/aws/role/<Name of AWS IAM Role> \
-  auth_type=iam \
-  bound_iam_principal_arn=arn:aws:iam::<AWS Account ID>:role/<Name of AWS IAM Role> \
-  policies=<name of *.hcl file policy> \
-  region=<AWS Region> \
-  max_ttl=768h
-```
+After this has been set up, write an [authentication-specific vault policy](https://developer.hashicorp.com/vault/docs/auth/aws#iam-authentication-inferences).
 
 ## Vault Session Settings
 
