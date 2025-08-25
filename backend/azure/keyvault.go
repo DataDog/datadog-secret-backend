@@ -43,9 +43,7 @@ var getKeyvaultClient = func(keyVaultURL string) (keyvaultClient, error) {
 
 // KeyVaultBackendConfig contains the configuration to connect for Azure backend
 type KeyVaultBackendConfig struct {
-	BackendType string `mapstructure:"backend_type"`
 	KeyVaultURL string `mapstructure:"keyvaulturl"`
-	SecretID    string `mapstructure:"secret_id"`
 }
 
 // KeyVaultBackend is a backend to fetch secrets from Azure
