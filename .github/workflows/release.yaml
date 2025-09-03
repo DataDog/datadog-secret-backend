@@ -32,3 +32,5 @@ jobs:
         asset_name: datadog-secret-backend-${{ matrix.goos }}-${{ matrix.goarch }}
         extra_files: datadog-secret-backend.yaml.example
         ldflags: -s -w
+        # Reduce the binary size by (1) disabling inlining and (2) disabling the GC write-barrier
+        build_flags: -gcflags=all="-l -wb=false"
