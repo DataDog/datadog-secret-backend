@@ -17,7 +17,7 @@ require (
 	github.com/aws/aws-sdk-go-v2 v1.38.3
 	github.com/aws/aws-sdk-go-v2/config v1.31.6
 	github.com/aws/aws-sdk-go-v2/credentials v1.18.10
-	github.com/aws/aws-sdk-go-v2/service/secretsmanager v1.39.1
+	github.com/aws/aws-sdk-go-v2/service/secretsmanager v1.39.2
 	github.com/aws/aws-sdk-go-v2/service/ssm v1.63.2
 	github.com/aws/aws-sdk-go-v2/service/sts v1.38.2
 	github.com/frapposelli/wwhrd v0.4.0
@@ -30,7 +30,7 @@ require (
 	github.com/hashicorp/vault/api/auth/ldap v0.10.0
 	github.com/hashicorp/vault/api/auth/userpass v0.10.0
 	github.com/mitchellh/mapstructure v1.5.0
-	github.com/stretchr/testify v1.11.0
+	github.com/stretchr/testify v1.11.1
 	gopkg.in/yaml.v2 v2.4.0
 )
 
@@ -45,7 +45,7 @@ require (
 	cloud.google.com/go/longrunning v0.6.7 // indirect
 	cloud.google.com/go/monitoring v1.24.2 // indirect
 	filippo.io/edwards25519 v1.1.0 // indirect
-	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.18.2
+	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.19.0
 	github.com/Azure/azure-sdk-for-go/sdk/internal v1.11.2 // indirect
 	github.com/Azure/azure-sdk-for-go/sdk/keyvault/azkeys v0.10.0 // indirect
 	github.com/Azure/azure-sdk-for-go/sdk/keyvault/internal v0.7.1 // indirect
