@@ -18,7 +18,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/config v1.31.6
 	github.com/aws/aws-sdk-go-v2/credentials v1.18.10
 	github.com/aws/aws-sdk-go-v2/service/secretsmanager v1.39.2
-	github.com/aws/aws-sdk-go-v2/service/ssm v1.63.2
+	github.com/aws/aws-sdk-go-v2/service/ssm v1.64.2
 	github.com/aws/aws-sdk-go-v2/service/sts v1.38.2
 	github.com/frapposelli/wwhrd v0.4.0
 	github.com/go-enry/go-license-detector/v4 v4.3.1
