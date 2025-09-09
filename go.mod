@@ -13,7 +13,7 @@ require (
 	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.11.0
 	github.com/Azure/azure-sdk-for-go/sdk/security/keyvault/azsecrets v1.4.0
 	github.com/aws/aws-sdk-go-v2 v1.39.0
-	github.com/aws/aws-sdk-go-v2/config v1.31.6
+	github.com/aws/aws-sdk-go-v2/config v1.31.7
 	github.com/aws/aws-sdk-go-v2/credentials v1.18.11
 	github.com/aws/aws-sdk-go-v2/service/secretsmanager v1.39.2
 	github.com/aws/aws-sdk-go-v2/service/ssm v1.64.3
