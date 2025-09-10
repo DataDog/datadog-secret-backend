@@ -25,6 +25,7 @@ require (
 	github.com/hashicorp/vault/api v1.20.0
 	github.com/hashicorp/vault/api/auth/approle v0.10.0
 	github.com/hashicorp/vault/api/auth/aws v0.10.0
+	github.com/hashicorp/vault/api/auth/kubernetes v0.10.0
 	github.com/hashicorp/vault/api/auth/ldap v0.10.0
 	github.com/hashicorp/vault/api/auth/userpass v0.10.0
 	github.com/mitchellh/mapstructure v1.5.0

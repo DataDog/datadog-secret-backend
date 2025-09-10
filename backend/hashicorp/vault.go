@@ -10,12 +10,14 @@ package hashicorp
 import (
 	"context"
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/DataDog/datadog-secret-backend/secret"
 	"github.com/hashicorp/vault/api"
 	"github.com/hashicorp/vault/api/auth/approle"
 	"github.com/hashicorp/vault/api/auth/aws"
+	"github.com/hashicorp/vault/api/auth/kubernetes"
 	"github.com/hashicorp/vault/api/auth/ldap"
 	"github.com/hashicorp/vault/api/auth/userpass"
 	"github.com/mitchellh/mapstructure"
@@ -23,15 +25,20 @@ import (
 
 // VaultSessionBackendConfig is the configuration for a Hashicorp vault backend
 type VaultSessionBackendConfig struct {
-	VaultRoleID       string `mapstructure:"vault_role_id"`
-	VaultSecretID     string `mapstructure:"vault_secret_id"`
-	VaultUserName     string `mapstructure:"vault_username"`
-	VaultPassword     string `mapstructure:"vault_password"`
-	VaultLDAPUserName string `mapstructure:"vault_ldap_username"`
-	VaultLDAPPassword string `mapstructure:"vault_ldap_password"`
-	VaultAuthType     string `mapstructure:"vault_auth_type"`
-	VaultAWSRole      string `mapstructure:"vault_aws_role"`
-	AWSRegion         string `mapstructure:"aws_region"`
+	VaultRoleID              string `mapstructure:"vault_role_id"`
+	VaultSecretID            string `mapstructure:"vault_secret_id"`
+	VaultUserName            string `mapstructure:"vault_username"`
+	VaultPassword            string `mapstructure:"vault_password"`
+	VaultLDAPUserName        string `mapstructure:"vault_ldap_username"`
+	VaultLDAPPassword        string `mapstructure:"vault_ldap_password"`
+	VaultAuthType            string `mapstructure:"vault_auth_type"`
+	VaultAWSRole             string `mapstructure:"vault_aws_role"`
+	AWSRegion                string `mapstructure:"aws_region"`
+	VaultKubernetesRole      string `mapstructure:"vault_kubernetes_role"`
+	VaultKubernetesJWT       string `mapstructure:"vault_kubernetes_jwt"`
+	VaultKubernetesJWTViaEnv string `mapstructure:"vault_kubernetes_jwt_env"`
+	VaultKubernetesJWTPath   string `mapstructure:"vault_kubernetes_jwt_path"`
+	VaultKubernetesMountPath string `mapstructure:"vault_kubernetes_mount_path"`
 }
 
 // VaultBackendConfig contains the configuration to connect to Hashicorp vault backend
@@ -50,6 +57,16 @@ type VaultTLSConfig struct {
 	ClientKey  string `mapstructure:"client_key"`
 	TLSServer  string `mapstructure:"tls_server"`
 	Insecure   bool   `mapstructure:"insecure"`
+}
+
+func extractMountFromAuthPath(authPath string) string {
+	if strings.HasPrefix(authPath, "auth/") && strings.HasSuffix(authPath, "/login") {
+		parts := strings.Split(authPath, "/")
+		if len(parts) == 3 {
+			return parts[1]
+		}
+	}
+	return "kubernetes" // default
 }
 
 // VaultBackend is a backend to fetch secrets from Hashicorp vault
@@ -105,6 +122,48 @@ func newVaultConfigFromBackendConfig(sessionConfig VaultSessionBackendConfig) (a
 		return aws.NewAWSAuth(opts...)
 	}
 
+	if sessionConfig.VaultAuthType == "kubernetes" {
+		var opts []kubernetes.LoginOption
+
+		// Fallback to legacy env vars if new config fields are missing
+		role := sessionConfig.VaultKubernetesRole
+		if role == "" {
+			role = os.Getenv("DD_SECRETS_VAULT_ROLE")
+		}
+
+		// If no role, we cannot proceed
+		if role == "" {
+			return nil, fmt.Errorf("vault_kubernetes_role not provided and DD_SECRETS_VAULT_ROLE not set")
+		}
+
+		// JWT fallback: priority order - explicit JWT, JWT path, JWT env
+		if sessionConfig.VaultKubernetesJWT != "" {
+			opts = append(opts, kubernetes.WithServiceAccountToken(sessionConfig.VaultKubernetesJWT))
+		} else if sessionConfig.VaultKubernetesJWTPath != "" {
+			opts = append(opts, kubernetes.WithServiceAccountTokenPath(sessionConfig.VaultKubernetesJWTPath))
+		} else if env := sessionConfig.VaultKubernetesJWTViaEnv; env != "" {
+			opts = append(opts, kubernetes.WithServiceAccountTokenEnv(env))
+		} else if path := os.Getenv("DD_SECRETS_SA_TOKEN_PATH"); path != "" {
+			opts = append(opts, kubernetes.WithServiceAccountTokenPath(path))
+		} // else: use default path
+
+		// Mount path fallback from DD_SECRETS_VAULT_AUTH_PATH
+		mountPath := sessionConfig.VaultKubernetesMountPath
+		if mountPath == "" {
+			if authPath := os.Getenv("DD_SECRETS_VAULT_AUTH_PATH"); authPath != "" {
+				mountPath = extractMountFromAuthPath(authPath)
+			}
+		}
+		if mountPath != "" {
+			opts = append(opts, kubernetes.WithMountPath(mountPath))
+		}
+
+		// Finally, create the auth method
+		fmt.Printf("K8s auth: role=%q, mountPath=%q\n", role, mountPath)
+		fmt.Printf("Reading service account token from: %q\n", os.Getenv("DD_SECRETS_SA_TOKEN_PATH"))
+		return kubernetes.NewKubernetesAuth(role, opts...)
+	}
+
 	return auth, err
 }
 
@@ -115,6 +174,7 @@ func NewVaultBackend(bc map[string]interface{}) (*VaultBackend, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to map backend configuration: %s", err)
 	}
+	fmt.Printf("Decoded backendConfig: %+v\n", backendConfig)
 
 	clientConfig := &api.Config{Address: backendConfig.VaultAddress}
 
@@ -138,6 +198,7 @@ func NewVaultBackend(bc map[string]interface{}) (*VaultBackend, error) {
 		return nil, fmt.Errorf("failed to create vault client: %s", err)
 	}
 
+	fmt.Printf("Calling newVaultConfigFromBackendConfig...")
 	authMethod, err := newVaultConfigFromBackendConfig(backendConfig.VaultSession)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize vault session: %s", err)
