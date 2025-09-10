@@ -214,7 +214,13 @@ func NewVaultBackend(bc map[string]interface{}) (*VaultBackend, error) {
 	} else if backendConfig.VaultToken != "" {
 		client.SetToken(backendConfig.VaultToken)
 	} else {
-		return nil, fmt.Errorf("no auth method or token provided")
+		return nil, fmt.Errorf("no auth method or token provided — vault_auth_type=%q, role=%q, mount=%q, jwt_path=%q, jwt_env=%q",
+			backendConfig.VaultSession.VaultAuthType,
+			backendConfig.VaultSession.VaultKubernetesRole,
+			backendConfig.VaultSession.VaultKubernetesMountPath,
+			backendConfig.VaultSession.VaultKubernetesJWTPath,
+			backendConfig.VaultSession.VaultKubernetesJWTViaEnv,
+		)
 	}
 
 	backend := &VaultBackend{
