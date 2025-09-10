@@ -159,8 +159,8 @@ func newVaultConfigFromBackendConfig(sessionConfig VaultSessionBackendConfig) (a
 		}
 
 		// Finally, create the auth method
-		fmt.Printf("K8s auth: role=%q, mountPath=%q\n", role, mountPath)
-		fmt.Printf("Reading service account token from: %q\n", os.Getenv("DD_SECRETS_SA_TOKEN_PATH"))
+		fmt.Fprintf(os.Stderr, "K8s auth: role=%q, mountPath=%q\n", role, mountPath)
+		fmt.Fprintf(os.Stderr, "Reading service account token from: %q\n", os.Getenv("DD_SECRETS_SA_TOKEN_PATH"))
 		return kubernetes.NewKubernetesAuth(role, opts...)
 	}
 
@@ -174,7 +174,7 @@ func NewVaultBackend(bc map[string]interface{}) (*VaultBackend, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to map backend configuration: %s", err)
 	}
-	fmt.Printf("Decoded backendConfig: %+v\n", backendConfig)
+	fmt.Fprintf(os.Stderr, "Decoded backendConfig: %+v\n", backendConfig)
 
 	clientConfig := &api.Config{Address: backendConfig.VaultAddress}
 
@@ -198,7 +198,7 @@ func NewVaultBackend(bc map[string]interface{}) (*VaultBackend, error) {
 		return nil, fmt.Errorf("failed to create vault client: %s", err)
 	}
 
-	fmt.Printf("Calling newVaultConfigFromBackendConfig...")
+	fmt.Fprintf(os.Stderr, "Calling newVaultConfigFromBackendConfig...")
 	authMethod, err := newVaultConfigFromBackendConfig(backendConfig.VaultSession)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize vault session: %s", err)
