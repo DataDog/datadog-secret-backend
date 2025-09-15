@@ -753,14 +753,6 @@ github.com/hashicorp/vault-plugin-secrets-terraform v0.12.0 h1:Hgg71Sb83BRWTAYOh
 github.com/hashicorp/vault-plugin-secrets-terraform v0.12.0/go.mod h1:GhuycGndJdiVieK0W23e5sJvBNNfhsEwRhkygnAjg2U=
 github.com/hashicorp/vault/api v1.20.0 h1:KQMHElgudOsr+IbJgmbjHnCTxEpKs9LnozA1D3nozU4=
 github.com/hashicorp/vault/api v1.20.0/go.mod h1:GZ4pcjfzoOWpkJ3ijHNpEoAxKEsBJnVljyTe3jM2Sms=
-github.com/hashicorp/vault/api/auth/approle v0.10.0 h1:cFwz7NzhsC//3JMMEfYDKelSwZx7GhR4IdgJVgfKBgs=
-github.com/hashicorp/vault/api/auth/approle v0.10.0/go.mod h1:XJ++u6wVPOl7H2Wlb9zVvXungf5Ca1Agukq8rMwYogc=
-github.com/hashicorp/vault/api/auth/kubernetes v0.10.0 h1:5rqWmUFxnu3S7XYq9dafURwBgabYDFzo2Wv+AMopPHs=
-github.com/hashicorp/vault/api/auth/kubernetes v0.10.0/go.mod h1:cZZmhF6xboMDmDbMY52oj2DKW6gS0cQ9g0pJ5XIXQ5U=
-github.com/hashicorp/vault/api/auth/ldap v0.10.0 h1:5sdJYikTVD8auisNJpOijrr/PfnHgdTZFdFrweFAtbs=
-github.com/hashicorp/vault/api/auth/ldap v0.10.0/go.mod h1:PvOSxTn6XcamOyIDKZexEVBiaTD6z7uqAg2r0/kgLr4=
-github.com/hashicorp/vault/api/auth/userpass v0.10.0 h1:m2z4E9snYJwOjpKS7EFa58upRenFkNsKHVsiCnJypSI=
-github.com/hashicorp/vault/api/auth/userpass v0.10.0/go.mod h1:GZOuwT7GFi3z3CLDwm/Xo8Y5i0R7C3UV+5KGqYCMEDU=
 github.com/hashicorp/vault/sdk v0.18.1-0.20250827145327-7665ff29d77e h1:4w8opgpxJ0kHqOx1lx3OgPT6gfvGBeg5XN9XDNnTNSY=
 github.com/hashicorp/vault/sdk v0.18.1-0.20250827145327-7665ff29d77e/go.mod h1:weNjVOROlRGOBPrLlcD9Fu4ymJDhXfm8VkPo2LAQASE=
 github.com/hashicorp/vic v1.5.1-0.20190403131502-bbfe86ec9443 h1:O/pT5C1Q3mVXMyuqg7yuAWUg/jMZR1/0QTzTRdNR6Uw=
@@ -1136,6 +1128,8 @@ github.com/prometheus/procfs v0.6.0/go.mod h1:cz+aTbrPOrUb4q7XlbU9ygM+/jj0fzG6c1
 github.com/prometheus/procfs v0.15.1 h1:YagwOFzUgYfKKHX6Dr+sHT7km/hxC76UB0learggepc=
 github.com/prometheus/procfs v0.15.1/go.mod h1:fB45yRUv8NstnjriLhBQLuOUt+WW4BsoGhij/e3PBqk=
 github.com/prometheus/tsdb v0.7.1/go.mod h1:qhTCs0VvXwvX/y3TZrWD7rabWM+ijKTux40TwIPHuXU=
+github.com/qri-io/jsonpointer v0.1.1 h1:prVZBZLL6TW5vsSB9fFHFAMBLI4b0ri5vribQlTJiBA=
+github.com/qri-io/jsonpointer v0.1.1/go.mod h1:DnJPaYgiKu56EuDp8TU5wFLdZIcAnb/uH9v37ZaMV64=
 github.com/rboyer/safeio v0.2.1 h1:05xhhdRNAdS3apYm7JRjOqngf4xruaW959jmRxGDuSU=
 github.com/rboyer/safeio v0.2.1/go.mod h1:Cq/cEPK+YXFn622lsQ0K4KsPZSPtaptHHEldsy7Fmig=
 github.com/renier/xmlrpc v0.0.0-20170708154548-ce4a1a486c03 h1:Wdi9nwnhFNAlseAOekn6B5G/+GMtks9UKbvRU/CMM/o=

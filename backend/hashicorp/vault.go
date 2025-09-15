@@ -8,19 +8,19 @@
 package hashicorp
 
 import (
-	"context"
+	"bytes"
+	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
 	"os"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/DataDog/datadog-secret-backend/secret"
-	"github.com/hashicorp/vault/api"
-	"github.com/hashicorp/vault/api/auth/approle"
-	"github.com/hashicorp/vault/api/auth/aws"
-	"github.com/hashicorp/vault/api/auth/kubernetes"
-	"github.com/hashicorp/vault/api/auth/ldap"
-	"github.com/hashicorp/vault/api/auth/userpass"
 	"github.com/mitchellh/mapstructure"
+	"github.com/qri-io/jsonpointer"
 )
 
 // VaultSessionBackendConfig is the configuration for a Hashicorp vault backend
@@ -47,6 +47,7 @@ type VaultBackendConfig struct {
 	VaultToken   string                    `mapstructure:"vault_token"`
 	VaultAddress string                    `mapstructure:"vault_address"`
 	VaultTLS     *VaultTLSConfig           `mapstructure:"vault_tls_config"`
+	ForceKVv2    bool                      `mapstructure:"force_kv_v2"`
 }
 
 // VaultTLSConfig contains the TLS and certificate configuration
@@ -59,277 +60,353 @@ type VaultTLSConfig struct {
 	Insecure   bool   `mapstructure:"insecure"`
 }
 
-func extractMountFromAuthPath(authPath string) string {
-	if strings.HasPrefix(authPath, "auth/") && strings.HasSuffix(authPath, "/login") {
-		parts := strings.Split(authPath, "/")
-		if len(parts) == 3 {
-			return parts[1]
-		}
-	}
-	return "kubernetes" // default
-}
-
 // VaultBackend is a backend to fetch secrets from Hashicorp vault
 type VaultBackend struct {
-	Config VaultBackendConfig
-	Client *api.Client
+	Config     VaultBackendConfig
+	httpClient *http.Client
+	token      string
+	baseURL    string
+	mutex      sync.RWMutex
 }
 
-// newVaultConfigFromBackendConfig returns a AuthMethod for Hashicorp vault based on the configuration
-func newVaultConfigFromBackendConfig(sessionConfig VaultSessionBackendConfig) (api.AuthMethod, error) {
-	var auth api.AuthMethod
-	var err error
-	if sessionConfig.VaultRoleID != "" {
-		if sessionConfig.VaultSecretID != "" {
-			secretID := &approle.SecretID{FromString: sessionConfig.VaultSecretID}
-			auth, err = approle.NewAppRoleAuth(sessionConfig.VaultRoleID, secretID)
-			if err != nil {
-				return nil, err
-			}
-		}
+// VaultAuthResponse represents the response from Vault auth
+type VaultAuthResponse struct {
+	Auth struct {
+		ClientToken string `json:"client_token"`
+		Accessor    string `json:"accessor"`
+	} `json:"auth"`
+}
+
+// VaultSecretResponse represents a secret response from Vault
+type VaultSecretResponse struct {
+	Data          map[string]interface{} `json:"data"`
+	LeaseDuration int                    `json:"lease_duration"`
+	LeaseID       string                 `json:"lease_id"`
+	Renewable     bool                   `json:"renewable"`
+	RequestID     string                 `json:"request_id"`
+	Warnings      []string               `json:"warnings"`
+}
+
+// safeExtractMountFromAuthPath safely extracts mount path from auth path
+func safeExtractMountFromAuthPath(authPath string) string {
+	fmt.Fprintf(os.Stderr, "DEBUG: Extracting mount path from %q\n", authPath)
+
+	if !strings.HasPrefix(authPath, "auth/") || !strings.HasSuffix(authPath, "/login") {
+		return "kubernetes"
 	}
 
-	if sessionConfig.VaultUserName != "" {
-		if sessionConfig.VaultPassword != "" {
-			password := &userpass.Password{FromString: sessionConfig.VaultPassword}
-			auth, err = userpass.NewUserpassAuth(sessionConfig.VaultUserName, password)
-			if err != nil {
-				return nil, err
-			}
-		}
+	// Remove "auth/" prefix and "/login" suffix safely
+	if len(authPath) <= 11 { // "auth/" + "/login" = 11 chars minimum
+		return "kubernetes"
 	}
 
-	if sessionConfig.VaultLDAPUserName != "" {
-		if sessionConfig.VaultLDAPPassword != "" {
-			password := &ldap.Password{FromString: sessionConfig.VaultLDAPPassword}
-			auth, err = ldap.NewLDAPAuth(sessionConfig.VaultLDAPUserName, password)
-			if err != nil {
-				return nil, err
-			}
-		}
-	}
-
-	if sessionConfig.VaultAuthType == "aws" && sessionConfig.VaultAWSRole != "" {
-		opts := []aws.LoginOption{
-			aws.WithIAMAuth(),
-			aws.WithRole(sessionConfig.VaultAWSRole),
-		}
-
-		if sessionConfig.AWSRegion != "" {
-			opts = append(opts, aws.WithRegion(sessionConfig.AWSRegion))
-		}
-
-		return aws.NewAWSAuth(opts...)
-	}
-
-	if sessionConfig.VaultAuthType == "kubernetes" {
-		var opts []kubernetes.LoginOption
-
-		// Fallback to legacy env vars if new config fields are missing
-		role := sessionConfig.VaultKubernetesRole
-		if role == "" {
-			role = os.Getenv("DD_SECRETS_VAULT_ROLE")
-		}
-
-		// If no role, we cannot proceed
-		if role == "" {
-			return nil, fmt.Errorf("vault_kubernetes_role not provided and DD_SECRETS_VAULT_ROLE not set")
-		}
-
-		// JWT fallback: priority order - explicit JWT, JWT path, JWT env
-		if sessionConfig.VaultKubernetesJWT != "" {
-			opts = append(opts, kubernetes.WithServiceAccountToken(sessionConfig.VaultKubernetesJWT))
-		} else if sessionConfig.VaultKubernetesJWTPath != "" {
-			opts = append(opts, kubernetes.WithServiceAccountTokenPath(sessionConfig.VaultKubernetesJWTPath))
-		} else if env := sessionConfig.VaultKubernetesJWTViaEnv; env != "" {
-			opts = append(opts, kubernetes.WithServiceAccountTokenEnv(env))
-		} else if path := os.Getenv("DD_SECRETS_SA_TOKEN_PATH"); path != "" {
-			opts = append(opts, kubernetes.WithServiceAccountTokenPath(path))
-		} // else: use default path
-
-		// Mount path fallback from DD_SECRETS_VAULT_AUTH_PATH
-		mountPath := sessionConfig.VaultKubernetesMountPath
-		if mountPath == "" {
-			if authPath := os.Getenv("DD_SECRETS_VAULT_AUTH_PATH"); authPath != "" {
-				mountPath = extractMountFromAuthPath(authPath)
-			}
-		}
-		if mountPath != "" {
-			opts = append(opts, kubernetes.WithMountPath(mountPath))
-		}
-
-		// Finally, create the auth method
-		fmt.Fprintf(os.Stderr, "K8s auth: role=%q, mountPath=%q\n", role, mountPath)
-		fmt.Fprintf(os.Stderr, "Reading service account token from: %q\n", os.Getenv("DD_SECRETS_SA_TOKEN_PATH"))
-		return kubernetes.NewKubernetesAuth(role, opts...)
-	}
-
-	return auth, err
+	result := authPath[5 : len(authPath)-6] // Remove "auth/" and "/login"
+	fmt.Fprintf(os.Stderr, "DEBUG: Extracted mount path: %q\n", result)
+	return result
 }
 
 // NewVaultBackend returns a new backend for Hashicorp vault
 func NewVaultBackend(bc map[string]interface{}) (*VaultBackend, error) {
-	backendConfig := VaultBackendConfig{}
-	err := mapstructure.Decode(bc, &backendConfig)
-	if err != nil {
-		return nil, fmt.Errorf("failed to map backend configuration: %s", err)
-	}
-	fmt.Fprintf(os.Stderr, "Decoded backendConfig: %+v\n", backendConfig)
-
-	clientConfig := &api.Config{Address: backendConfig.VaultAddress}
-
-	if backendConfig.VaultTLS != nil {
-		tlsConfig := &api.TLSConfig{
-			CACert:        backendConfig.VaultTLS.CACert,
-			CAPath:        backendConfig.VaultTLS.CAPath,
-			ClientCert:    backendConfig.VaultTLS.ClientCert,
-			ClientKey:     backendConfig.VaultTLS.ClientKey,
-			TLSServerName: backendConfig.VaultTLS.TLSServer,
-			Insecure:      backendConfig.VaultTLS.Insecure,
-		}
-		err := clientConfig.ConfigureTLS(tlsConfig)
-		if err != nil {
-			return nil, fmt.Errorf("failed to initialize vault tls configuration: %s", err)
-		}
+	var config VaultBackendConfig
+	if err := mapstructure.Decode(bc, &config); err != nil {
+		return nil, fmt.Errorf("failed to decode config: %w", err)
 	}
 
-	client, err := api.NewClient(clientConfig)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create vault client: %s", err)
-	}
-
-	fmt.Fprintf(os.Stderr, "Calling newVaultConfigFromBackendConfig...")
-	authMethod, err := newVaultConfigFromBackendConfig(backendConfig.VaultSession)
-	if err != nil {
-		return nil, fmt.Errorf("failed to initialize vault session: %s", err)
-	}
-	if authMethod != nil {
-		authInfo, err := client.Auth().Login(context.TODO(), authMethod)
-		if err != nil {
-			return nil, fmt.Errorf("failed to created auth info: %s", err)
-		}
-		if authInfo == nil {
-			return nil, fmt.Errorf("no auth info returned")
-		}
-	} else if backendConfig.VaultToken != "" {
-		client.SetToken(backendConfig.VaultToken)
-	} else {
-		return nil, fmt.Errorf("no auth method or token provided — vault_auth_type=%q, role=%q, mount=%q, jwt_path=%q, jwt_env=%q",
-			backendConfig.VaultSession.VaultAuthType,
-			backendConfig.VaultSession.VaultKubernetesRole,
-			backendConfig.VaultSession.VaultKubernetesMountPath,
-			backendConfig.VaultSession.VaultKubernetesJWTPath,
-			backendConfig.VaultSession.VaultKubernetesJWTViaEnv,
-		)
+	// Create HTTP client with reasonable timeout
+	client := &http.Client{
+		Timeout: 30 * time.Second,
 	}
 
 	backend := &VaultBackend{
-		Config: backendConfig,
-		Client: client,
+		Config:     config,
+		httpClient: client,
+		baseURL:    strings.TrimRight(config.VaultAddress, "/"),
 	}
+
+	// Authenticate and get token
+	if err := backend.authenticate(); err != nil {
+		return nil, fmt.Errorf("authentication failed: %w", err)
+	}
+
 	return backend, nil
 }
 
-// GetSecretOutput returns a the value for a specific secret
-func (b *VaultBackend) GetSecretOutput(secretString string) secret.Output {
-	segments := strings.SplitN(secretString, ";", 2)
-	if len(segments) != 2 {
-		es := "invalid secret format, expected 'secret_id;key'"
-		return secret.Output{Value: nil, Error: &es}
-	}
-	secretPath := segments[0]
-	secretKey := segments[1]
-
-	// KV version detection:
-	// If the mount path is set as /Example/Path, and the secret path is set at /Example/Path/Secret,
-	// then we need to query from /Example/Path/data/Secret in kv v2, and /Example/Path/Secret in kv v1.
-	isKVv2, mountPrefix := isKVv2Mount(b.Client, secretPath)
-
-	readPath := secretPath
-	if isKVv2 {
-		readPath = insertDataPath(secretPath, mountPrefix)
-	}
-	sec, err := b.Client.Logical().Read(readPath)
-	if err != nil {
-		es := err.Error()
-		return secret.Output{Value: nil, Error: &es}
+func (b *VaultBackend) authenticate() error {
+	if b.Config.VaultToken != "" {
+		b.token = b.Config.VaultToken
+		return nil
 	}
 
-	if sec == nil || sec.Data == nil {
-		es := "secret data is nil"
-		return secret.Output{Value: nil, Error: &es}
+	if b.Config.VaultSession.VaultAuthType == "kubernetes" {
+		return b.authenticateKubernetes()
 	}
 
-	var dataMap map[string]interface{}
-	if isKVv2 {
-		if inner, ok := sec.Data["data"].(map[string]interface{}); ok {
-			dataMap = inner
-		} else {
-			es := "secret data is not in expected format for KV v2"
-			return secret.Output{Value: nil, Error: &es}
-		}
-	} else {
-		dataMap = sec.Data
-	}
-
-	if dataMap == nil {
-		es := "There is no actual data in the secret"
-		return secret.Output{Value: nil, Error: &es}
-	}
-
-	if data, ok := dataMap[secretKey]; ok {
-		if strValue, ok := data.(string); ok {
-			return secret.Output{Value: &strValue, Error: nil}
-		}
-		es := "secret value is not a string"
-		return secret.Output{Value: nil, Error: &es}
-	}
-
-	es := secret.ErrKeyNotFound.Error()
-	return secret.Output{Value: nil, Error: &es}
+	return fmt.Errorf("no supported authentication method configured")
 }
 
-func isKVv2Mount(client *api.Client, secretPath string) (bool, string) {
-	mounts, err := client.Sys().ListMounts()
-	if err != nil {
-		return false, ""
+func (b *VaultBackend) authenticateKubernetes() error {
+	// Get role
+	role := b.Config.VaultSession.VaultKubernetesRole
+	if role == "" {
+		role = os.Getenv("DD_SECRETS_VAULT_ROLE")
+	}
+	if role == "" {
+		return fmt.Errorf("kubernetes role not specified")
 	}
 
+	// Get JWT token
+	var jwtToken string
+	if b.Config.VaultSession.VaultKubernetesJWT != "" {
+		jwtToken = b.Config.VaultSession.VaultKubernetesJWT
+	} else {
+		// Read from file
+		tokenPath := b.Config.VaultSession.VaultKubernetesJWTPath
+		if tokenPath == "" {
+			tokenPath = os.Getenv("DD_SECRETS_SA_TOKEN_PATH")
+		}
+		if tokenPath == "" {
+			tokenPath = "/var/run/secrets/kubernetes.io/serviceaccount/token"
+		}
+
+		tokenBytes, err := os.ReadFile(tokenPath)
+		if err != nil {
+			return fmt.Errorf("failed to read JWT token from %s: %w", tokenPath, err)
+		}
+		jwtToken = strings.TrimSpace(string(tokenBytes))
+	}
+
+	// Get mount path
+	mountPath := b.Config.VaultSession.VaultKubernetesMountPath
+	if mountPath == "" {
+		if authPath := os.Getenv("DD_SECRETS_VAULT_AUTH_PATH"); authPath != "" {
+			mountPath = safeExtractMountFromAuthPath(authPath)
+		}
+	}
+	if mountPath == "" {
+		mountPath = "kubernetes"
+	}
+
+	fmt.Fprintf(os.Stderr, "Authenticating with role=%q, mountPath=%q\n", role, mountPath)
+
+	// Prepare auth request
+	authData := map[string]interface{}{
+		"jwt":  jwtToken,
+		"role": role,
+	}
+
+	authURL := fmt.Sprintf("%s/v1/auth/%s/login", b.baseURL, mountPath)
+	return b.performAuth(authURL, authData)
+}
+
+func (b *VaultBackend) performAuth(authURL string, authData map[string]interface{}) error {
+	jsonData, err := json.Marshal(authData)
+	if err != nil {
+		return fmt.Errorf("failed to marshal auth data: %w", err)
+	}
+
+	req, err := http.NewRequest("POST", authURL, bytes.NewBuffer(jsonData))
+	if err != nil {
+		return fmt.Errorf("failed to create request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := b.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("auth request failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("failed to read response: %w", err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("auth failed with status %d: %s", resp.StatusCode, string(body))
+	}
+
+	var authResp VaultAuthResponse
+	if err := json.Unmarshal(body, &authResp); err != nil {
+		return fmt.Errorf("failed to parse auth response: %w", err)
+	}
+
+	if authResp.Auth.ClientToken == "" {
+		return fmt.Errorf("no token in auth response")
+	}
+
+	b.token = authResp.Auth.ClientToken
+	fmt.Fprintf(os.Stderr, "Authentication successful\n")
+	return nil
+}
+
+func (b *VaultBackend) parseSecretString(secretString string) (string, interface{}, error) {
+	if strings.HasPrefix(secretString, "vault://") {
+		pathWithKey := strings.TrimPrefix(secretString, "vault://")
+		parts := strings.SplitN(pathWithKey, "#", 2)
+		if len(parts) != 2 {
+			return "", nil, fmt.Errorf("invalid vault:// format")
+		}
+
+		pointer, err := jsonpointer.Parse(parts[1])
+		if err != nil {
+			return "", nil, fmt.Errorf("invalid JSON pointer: %w", err)
+		}
+
+		return parts[0], pointer, nil
+	}
+
+	parts := strings.SplitN(secretString, ";", 2)
+	if len(parts) != 2 {
+		return "", nil, fmt.Errorf("invalid format, expected 'path;key' or 'vault://path#/json/pointer'")
+	}
+
+	return parts[0], parts[1], nil
+}
+
+func (b *VaultBackend) GetSecretOutput(secretString string) secret.Output {
+	b.mutex.RLock()
+	defer b.mutex.RUnlock()
+
+	secretPath, keyOrPointer, err := b.parseSecretString(secretString)
+	if err != nil {
+		errMsg := err.Error()
+		return secret.Output{Value: nil, Error: &errMsg}
+	}
+
+	// Determine read path
+	readPath := secretPath
+	isKVv2 := b.Config.ForceKVv2
+	if isKVv2 {
+		readPath = b.buildKVv2Path(secretPath)
+	}
+
+	// Read secret
+	secretData, err := b.readSecret(readPath)
+	if err != nil {
+		errMsg := err.Error()
+		return secret.Output{Value: nil, Error: &errMsg}
+	}
+
+	// Handle JSON pointer format
+	if pointer, ok := keyOrPointer.(jsonpointer.Pointer); ok {
+		return b.handleJSONPointer(secretData, pointer, secretPath)
+	}
+
+	// Handle simple key format
+	return b.handleSimpleKey(secretData, keyOrPointer.(string), isKVv2)
+}
+
+func (b *VaultBackend) readSecret(path string) (*VaultSecretResponse, error) {
+	url := fmt.Sprintf("%s/v1/%s", b.baseURL, strings.TrimPrefix(path, "/"))
+
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+	req.Header.Set("X-Vault-Token", b.token)
+
+	resp, err := b.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("request failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read response: %w", err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("request failed with status %d: %s", resp.StatusCode, string(body))
+	}
+
+	var secretResp VaultSecretResponse
+	if err := json.Unmarshal(body, &secretResp); err != nil {
+		return nil, fmt.Errorf("failed to parse response: %w", err)
+	}
+
+	return &secretResp, nil
+}
+
+func (b *VaultBackend) buildKVv2Path(secretPath string) string {
 	cleanPath := strings.TrimPrefix(secretPath, "/")
 	parts := strings.Split(cleanPath, "/")
 
-	// Try progressively longer prefixes: Datadog/, Datadog/Production/, etc.
-	for i := 1; i <= len(parts); i++ {
-		prefix := strings.Join(parts[:i], "/") + "/"
-
-		if mountInfo, ok := mounts[prefix]; ok {
-			if mountInfo.Type == "kv" {
-				version := mountInfo.Options["version"]
-				return version == "2", prefix
-			}
-		}
+	if len(parts) >= 2 {
+		return parts[0] + "/data/" + strings.Join(parts[1:], "/")
 	}
 
-	// If no mount was found, then assume that it is v1 of the Hashicorp vault secrets engine
-	return false, ""
+	return secretPath + "/data"
 }
 
-func insertDataPath(secretPath, mountPrefix string) string {
-
-	trimmedSecret := strings.TrimPrefix(secretPath, "/")
-	trimmedMount := strings.TrimPrefix(mountPrefix, "/")
-
-	if !strings.HasPrefix(trimmedSecret, trimmedMount) {
-		// secret path does not match mount prefix, so we are skipping data insertion
-		return secretPath
+func (b *VaultBackend) handleJSONPointer(secretData *VaultSecretResponse, pointer jsonpointer.Pointer, vaultPath string) secret.Output {
+	head := pointer.Head()
+	if head == nil {
+		errMsg := "invalid JSON pointer"
+		return secret.Output{Value: nil, Error: &errMsg}
 	}
 
-	// remove mount prefix from path
-	relative := strings.TrimPrefix(trimmedSecret, trimmedMount)
-	relative = strings.TrimPrefix(relative, "/")
+	var value interface{}
+	var err error
 
-	if relative == "" {
-		return trimmedMount + "data"
+	switch *head {
+	case "data":
+		value, err = pointer.Tail().Eval(secretData.Data)
+		if err != nil {
+			errMsg := fmt.Sprintf("JSON pointer evaluation failed: %v", err)
+			return secret.Output{Value: nil, Error: &errMsg}
+		}
+	case "lease_duration":
+		value = secretData.LeaseDuration
+	case "lease_id":
+		value = secretData.LeaseID
+	case "renewable":
+		value = secretData.Renewable
+	case "request_id":
+		value = secretData.RequestID
+	case "warnings":
+		value = secretData.Warnings
+	default:
+		errMsg := fmt.Sprintf("unsupported pointer key: %s", *head)
+		return secret.Output{Value: nil, Error: &errMsg}
 	}
-	return trimmedMount + "data/" + relative
+
+	if value == nil {
+		errMsg := fmt.Sprintf("no value found for pointer %s", pointer)
+		return secret.Output{Value: nil, Error: &errMsg}
+	}
+
+	valueStr := fmt.Sprintf("%v", value)
+	return secret.Output{Value: &valueStr, Error: nil}
+}
+
+func (b *VaultBackend) handleSimpleKey(secretData *VaultSecretResponse, key string, isKVv2 bool) secret.Output {
+	var dataMap map[string]interface{}
+
+	if isKVv2 {
+		if inner, ok := secretData.Data["data"].(map[string]interface{}); ok {
+			dataMap = inner
+		} else {
+			errMsg := "KV v2 data not in expected format"
+			return secret.Output{Value: nil, Error: &errMsg}
+		}
+	} else {
+		dataMap = secretData.Data
+	}
+
+	if dataMap == nil {
+		errMsg := "no data in secret"
+		return secret.Output{Value: nil, Error: &errMsg}
+	}
+
+	if value, ok := dataMap[key]; ok {
+		if strValue, ok := value.(string); ok {
+			return secret.Output{Value: &strValue, Error: nil}
+		}
+		errMsg := "secret value is not a string"
+		return secret.Output{Value: nil, Error: &errMsg}
+	}
+
+	errMsg := fmt.Sprintf("key %q not found", key)
+	return secret.Output{Value: nil, Error: &errMsg}
 }
