@@ -159,6 +159,11 @@ func newVaultConfigFromBackendConfig(sessionConfig VaultSessionBackendConfig) (a
 			kubernetes.WithServiceAccountToken(jwtToken),
 		}
 
+		if sessionConfig.VaultKubernetesMountPath == "" {
+			if authPath := os.Getenv("VAULT_AUTH_PATH"); authPath != "" {
+				sessionConfig.VaultKubernetesMountPath = authPath
+			}
+		}
 		if sessionConfig.VaultKubernetesMountPath != "" {
 			opts = append(opts, kubernetes.WithMountPath(sessionConfig.VaultKubernetesMountPath))
 		}
