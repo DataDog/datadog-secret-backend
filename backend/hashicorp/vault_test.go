@@ -305,7 +305,7 @@ func TestGetKubernetesJWTToken(t *testing.T) {
 			// Set up environment variables
 			for key, value := range tt.envVars {
 				os.Setenv(key, value)
-				defer os.Unsetenv(key)
+				defer func() { _ = os.Unsetenv(key) }()
 			}
 
 			// Create temp file if needed
@@ -449,7 +449,7 @@ func TestNewVaultConfigFromBackendConfig_KubernetesAuth(t *testing.T) {
 			// Set up environment variables
 			for key, value := range tt.envVars {
 				os.Setenv(key, value)
-				defer os.Unsetenv(key)
+				defer func() { _ = os.Unsetenv(key) }()
 			}
 
 			auth, err := newVaultConfigFromBackendConfig(tt.sessionConfig)
