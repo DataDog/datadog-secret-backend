@@ -152,7 +152,9 @@ func newVaultConfigFromBackendConfig(sessionConfig VaultSessionBackendConfig) (a
 		}
 
 		if sessionConfig.VaultKubernetesMountPath == "" {
-			if authPath := os.Getenv("VAULT_AUTH_PATH"); authPath != "" {
+			if authPath := os.Getenv("DD_SECRETS_VAULT_AUTH_PATH"); authPath != "" {
+				authPath = strings.TrimPrefix(authPath, "auth/")
+				authPath = strings.TrimSuffix(authPath, "/login")
 				sessionConfig.VaultKubernetesMountPath = authPath
 			}
 		}
