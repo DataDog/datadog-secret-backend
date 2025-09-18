@@ -37,7 +37,6 @@ type VaultSessionBackendConfig struct {
 	AWSRegion                string `mapstructure:"aws_region"`
 	VaultKubernetesRole      string `mapstructure:"vault_kubernetes_role"`
 	VaultKubernetesJWT       string `mapstructure:"vault_kubernetes_jwt"`
-	VaultKubernetesJWTViaEnv string `mapstructure:"vault_kubernetes_jwt_env"`
 	VaultKubernetesJWTPath   string `mapstructure:"vault_kubernetes_jwt_path"`
 	VaultKubernetesMountPath string `mapstructure:"vault_kubernetes_mount_path"`
 }
@@ -69,13 +68,6 @@ type VaultBackend struct {
 func getKubernetesJWTToken(sessionConfig VaultSessionBackendConfig) (string, error) {
 	if sessionConfig.VaultKubernetesJWT != "" {
 		return sessionConfig.VaultKubernetesJWT, nil
-	}
-
-	if sessionConfig.VaultKubernetesJWTViaEnv != "" {
-		if token := os.Getenv(sessionConfig.VaultKubernetesJWTViaEnv); token != "" {
-			return token, nil
-		}
-		return "", fmt.Errorf("environment variable %s is empty", sessionConfig.VaultKubernetesJWTViaEnv)
 	}
 
 	tokenPath := sessionConfig.VaultKubernetesJWTPath
@@ -252,6 +244,16 @@ func (b *VaultBackend) handleVaultURIFormat(secretString string) secret.Output {
 	secretPath := parts[0]
 	pointerStr := parts[1]
 
+	if secretPath == "" {
+		es := "secret path cannot be empty"
+		return secret.Output{Value: nil, Error: &es}
+	}
+
+	if pointerStr == "" {
+		es := "invalid JSON pointer"
+		return secret.Output{Value: nil, Error: &es}
+	}
+
 	pointer, err := jsonpointer.Parse(pointerStr)
 	if err != nil {
 		es := fmt.Sprintf("invalid JSON pointer %q: %s", pointerStr, err.Error())
@@ -278,10 +280,35 @@ func (b *VaultBackend) handleVaultURIFormat(secretString string) secret.Output {
 	var value interface{}
 	switch *head {
 	case "data":
-		value, err = pointer.Tail().Eval(sec.Data)
-		if err != nil {
-			es := fmt.Sprintf("JSON pointer evaluation failed: %s", err.Error())
-			return secret.Output{Value: nil, Error: &es}
+		// Handle /data or /data/... paths
+		if len(pointer) == 1 {
+			// Just "/data" - return the appropriate data structure
+			if dataField, ok := sec.Data["data"]; ok {
+				// KV v2: return the nested data field
+				value = dataField
+			} else {
+				// KV v1: return the entire data map
+				value = sec.Data
+			}
+		} else {
+			// "/data/something" - need to evaluate the rest
+			tail := pointer.Tail()
+			if tail == nil {
+				es := "invalid JSON pointer structure"
+				return secret.Output{Value: nil, Error: &es}
+			}
+
+			if dataField, ok := sec.Data["data"].(map[string]interface{}); ok {
+				// This is likely KV v2, evaluate the tail against the nested data
+				value, err = tail.Eval(dataField)
+			} else {
+				// This is likely KV v1, evaluate the tail against sec.Data directly
+				value, err = tail.Eval(sec.Data)
+			}
+			if err != nil {
+				es := fmt.Sprintf("no value found for pointer %s", pointer)
+				return secret.Output{Value: nil, Error: &es}
+			}
 		}
 	case "lease_duration":
 		value = sec.LeaseDuration
@@ -294,8 +321,13 @@ func (b *VaultBackend) handleVaultURIFormat(secretString string) secret.Output {
 	case "warnings":
 		value = sec.Warnings
 	default:
-		es := fmt.Sprintf("unsupported pointer key: %s", *head)
-		return secret.Output{Value: nil, Error: &es}
+		// For other keys, try to evaluate directly against sec.Data
+		// This handles KV v1 where data is stored directly, not under a "data" key
+		value, err = pointer.Eval(sec.Data)
+		if err != nil {
+			es := fmt.Sprintf("no value found for pointer %s", pointer)
+			return secret.Output{Value: nil, Error: &es}
+		}
 	}
 
 	if value == nil {
