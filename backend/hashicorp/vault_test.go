@@ -7,6 +7,7 @@
 package hashicorp
 
 import (
+	"errors"
 	"net"
 	"os"
 	"testing"
@@ -261,7 +262,7 @@ func TestGetKubernetesJWTToken(t *testing.T) {
 		{
 			name: "JWT from file path",
 			sessionConfig: VaultSessionBackendConfig{
-				VaultKubernetesJWTPath: "", // Will be set to temp file
+				VaultKubernetesJWTPath: "tmp", // Will be set to temp file
 			},
 			createTempFile:  true,
 			tempFileContent: "file-jwt-token",
@@ -271,7 +272,7 @@ func TestGetKubernetesJWTToken(t *testing.T) {
 		{
 			name: "JWT from file path with whitespace",
 			sessionConfig: VaultSessionBackendConfig{
-				VaultKubernetesJWTPath: "", // Will be set to temp file
+				VaultKubernetesJWTPath: "tmp", // Will be set to temp file
 			},
 			createTempFile:  true,
 			tempFileContent: "  file-jwt-token-with-spaces  \n",
@@ -284,7 +285,7 @@ func TestGetKubernetesJWTToken(t *testing.T) {
 				// No explicit path set
 			},
 			envVars: map[string]string{
-				"DD_SECRETS_SA_TOKEN_PATH": "", // Will be set to temp file
+				"DD_SECRETS_SA_TOKEN_PATH": "tmp", // Will be set to temp file
 			},
 			createTempFile:  true,
 			tempFileContent: "default-env-path-token",
@@ -302,12 +303,6 @@ func TestGetKubernetesJWTToken(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Set up environment variables
-			for key, value := range tt.envVars {
-				os.Setenv(key, value)
-				defer func() { _ = os.Unsetenv(key) }()
-			}
-
 			// Create temp file if needed
 			if tt.createTempFile {
 				tmpFile, err := os.CreateTemp("", "jwt-token-test")
@@ -318,12 +313,11 @@ func TestGetKubernetesJWTToken(t *testing.T) {
 				require.NoError(t, err)
 				tmpFile.Close()
 
-				if tt.sessionConfig.VaultKubernetesJWTPath == "" {
-					if tt.envVars["DD_SECRETS_SA_TOKEN_PATH"] == "" {
-						tt.sessionConfig.VaultKubernetesJWTPath = tmpFile.Name()
-					} else {
-						os.Setenv("DD_SECRETS_SA_TOKEN_PATH", tmpFile.Name())
-					}
+				if tt.sessionConfig.VaultKubernetesJWTPath == "tmp" {
+					tt.sessionConfig.VaultKubernetesJWTPath = tmpFile.Name()
+				}
+				if tt.envVars["DD_SECRETS_SA_TOKEN_PATH"] == "tmp" {
+					t.Setenv("DD_SECRETS_SA_TOKEN_PATH", tmpFile.Name())
 				}
 			}
 
@@ -598,6 +592,12 @@ func TestVaultBackend_VaultURIFormat(t *testing.T) {
 			expectError:    true,
 			errorSubstring: "no value found for pointer",
 		},
+		{
+			name:           "/data in the wrong place",
+			secretString:   "vault://secret/complex/data#/value",
+			expectError:    true,
+			errorSubstring: "secret data is nil",
+		},
 	}
 
 	for _, tt := range tests {
@@ -606,10 +606,7 @@ func TestVaultBackend_VaultURIFormat(t *testing.T) {
 
 			if tt.expectError {
 				assert.Nil(t, secretOutput.Value)
-				assert.NotNil(t, secretOutput.Error)
-				if tt.errorSubstring != "" {
-					assert.Contains(t, *secretOutput.Error, tt.errorSubstring)
-				}
+				require.ErrorContains(t, errors.New(*secretOutput.Error), tt.errorSubstring)
 			} else {
 				assert.NotNil(t, secretOutput.Value)
 				assert.Nil(t, secretOutput.Error)
@@ -688,10 +685,7 @@ func TestVaultBackend_VaultURIFormat_KVv2(t *testing.T) {
 
 			if tt.expectError {
 				assert.Nil(t, secretOutput.Value)
-				assert.NotNil(t, secretOutput.Error)
-				if tt.errorSubstring != "" {
-					assert.Contains(t, *secretOutput.Error, tt.errorSubstring)
-				}
+				require.ErrorContains(t, errors.New(*secretOutput.Error), tt.errorSubstring)
 			} else {
 				assert.NotNil(t, secretOutput.Value)
 				assert.Nil(t, secretOutput.Error)
@@ -792,10 +786,7 @@ func TestVaultBackend_ErrorHandling(t *testing.T) {
 
 			if tt.expectError {
 				assert.Nil(t, secretOutput.Value)
-				assert.NotNil(t, secretOutput.Error)
-				if tt.errorMessage != "" {
-					assert.Contains(t, *secretOutput.Error, tt.errorMessage)
-				}
+				require.ErrorContains(t, errors.New(*secretOutput.Error), tt.errorMessage)
 			} else {
 				assert.NotNil(t, secretOutput.Value)
 				assert.Nil(t, secretOutput.Error)
