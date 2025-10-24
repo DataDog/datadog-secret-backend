@@ -179,10 +179,10 @@ func NewVaultBackend(bc map[string]interface{}) (*VaultBackend, error) {
 		return nil, fmt.Errorf("failed to map backend configuration: %s", err)
 	}
 
-	vaultAddress := backendConfig.VaultAddress
+	vaultAddress := os.Getenv("VAULT_ADDR")
 	if vaultAddress == "" {
-		if envPath := os.Getenv("VAULT_ADDR"); envPath != "" {
-			vaultAddress = envPath
+		if configPath := backendConfig.VaultAddress; configPath != "" {
+			vaultAddress = configPath
 		} else {
 			return nil, fmt.Errorf("failed to provide a vault address: %s", err)
 		}
