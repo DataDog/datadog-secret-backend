@@ -412,7 +412,7 @@ func TestNewVaultConfigFromBackendConfig_KubernetesAuth(t *testing.T) {
 				VaultKubernetesJWT:  "test-jwt-token",
 			},
 			envVars: map[string]string{
-				"VAULT_AUTH_PATH": "env/auth/path",
+				"DD_SECRETS_VAULT_AUTH_PATH": "env/auth/path",
 			},
 			expectAuth:  true,
 			expectError: false,

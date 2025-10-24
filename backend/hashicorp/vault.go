@@ -155,9 +155,6 @@ func newVaultConfigFromBackendConfig(sessionConfig VaultSessionBackendConfig) (a
 		if authPath == "" {
 			authPath = sessionConfig.VaultKubernetesMountPath
 		}
-		if authPath == "" {
-			return nil, fmt.Errorf("authPath not specified")
-		}
 		authPath = strings.TrimPrefix(authPath, "auth/")
 		authPath = strings.TrimSuffix(authPath, "/login")
 
