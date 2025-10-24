@@ -70,10 +70,10 @@ func getKubernetesJWTToken(sessionConfig VaultSessionBackendConfig) (string, err
 		return sessionConfig.VaultKubernetesJWT, nil
 	}
 
-	tokenPath := sessionConfig.VaultKubernetesJWTPath
+	tokenPath := os.Getenv("DD_SECRETS_SA_TOKEN_PATH")
 	if tokenPath == "" {
-		if envPath := os.Getenv("DD_SECRETS_SA_TOKEN_PATH"); envPath != "" {
-			tokenPath = envPath
+		if configPath := sessionConfig.VaultKubernetesJWTPath; configPath != "" {
+			tokenPath = configPath
 		} else {
 			tokenPath = "/var/run/secrets/kubernetes.io/serviceaccount/token"
 		}
@@ -134,9 +134,9 @@ func newVaultConfigFromBackendConfig(sessionConfig VaultSessionBackendConfig) (a
 	}
 
 	if sessionConfig.VaultAuthType == "kubernetes" {
-		role := sessionConfig.VaultKubernetesRole
+		role := os.Getenv("DD_SECRETS_VAULT_ROLE")
 		if role == "" {
-			role = os.Getenv("DD_SECRETS_VAULT_ROLE")
+			role = sessionConfig.VaultKubernetesRole
 		}
 		if role == "" {
 			return nil, fmt.Errorf("kubernetes role not specified")
@@ -151,15 +151,18 @@ func newVaultConfigFromBackendConfig(sessionConfig VaultSessionBackendConfig) (a
 			kubernetes.WithServiceAccountToken(jwtToken),
 		}
 
-		if sessionConfig.VaultKubernetesMountPath == "" {
-			if authPath := os.Getenv("DD_SECRETS_VAULT_AUTH_PATH"); authPath != "" {
-				authPath = strings.TrimPrefix(authPath, "auth/")
-				authPath = strings.TrimSuffix(authPath, "/login")
-				sessionConfig.VaultKubernetesMountPath = authPath
-			}
+		authPath := os.Getenv("DD_SECRETS_VAULT_AUTH_PATH")
+		if authPath == "" {
+			authPath = sessionConfig.VaultKubernetesMountPath
 		}
-		if sessionConfig.VaultKubernetesMountPath != "" {
-			opts = append(opts, kubernetes.WithMountPath(sessionConfig.VaultKubernetesMountPath))
+		if authPath == "" {
+			return nil, fmt.Errorf("authPath not specified")
+		}
+		authPath = strings.TrimPrefix(authPath, "auth/")
+		authPath = strings.TrimSuffix(authPath, "/login")
+
+		if authPath != "" {
+			opts = append(opts, kubernetes.WithMountPath(authPath))
 		}
 
 		auth, err = kubernetes.NewKubernetesAuth(role, opts...)
