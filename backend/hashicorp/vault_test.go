@@ -405,6 +405,17 @@ func TestNewVaultConfigFromBackendConfig_KubernetesAuth(t *testing.T) {
 			expectError: false,
 		},
 		{
+			name: "Kubernetes auth with custom mount path (remove auth/ and /login)",
+			sessionConfig: VaultSessionBackendConfig{
+				VaultAuthType:            "kubernetes",
+				VaultKubernetesRole:      "test-role",
+				VaultKubernetesJWT:       "test-jwt-token",
+				VaultKubernetesMountPath: "auth/custom/auth/path/login",
+			},
+			expectAuth:  true,
+			expectError: false,
+		},
+		{
 			name: "Kubernetes auth with mount path from env var",
 			sessionConfig: VaultSessionBackendConfig{
 				VaultAuthType:       "kubernetes",
