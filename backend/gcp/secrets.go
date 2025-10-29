@@ -9,8 +9,10 @@ package gcp
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	secretmanager "cloud.google.com/go/secretmanager/apiv1"
+	"cloud.google.com/go/secretmanager/apiv1/secretmanagerpb"
 	"github.com/DataDog/datadog-secret-backend/secret"
 	"github.com/mitchellh/mapstructure"
 )
@@ -39,8 +41,7 @@ func NewSecretManagerBackend(bc map[string]interface{}) (*SecretManagerBackend, 
 		return nil, fmt.Errorf("failed to map backend configuration: %s", err)
 	}
 
-	ctx := context.Background()
-	client, err := secretmanager.NewClient(ctx)
+	client, err := secretmanager.NewClient(context.Background())
 	if err != nil {
 		return nil, fmt.Errorf("failed to create secret manager client: %v", err)
 	}
@@ -52,5 +53,23 @@ func NewSecretManagerBackend(bc map[string]interface{}) (*SecretManagerBackend, 
 }
 
 func (b *SecretManagerBackend) GetSecretOutput(secretString string) secret.Output {
-	return secret.Output{}
+	// "secret-name" or "secret-name;version"
+	sec, version := secretString, "latest"
+	if name, ver, ok := strings.Cut(secretString, ";"); ok {
+		sec, version = name, ver
+	}
+
+	// projects/{project}/secrets/{secret}/versions/{version}
+	resource := fmt.Sprintf("projects/%s/secrets/%s/versions/%s", b.Config.Session.ProjectID, sec, version)
+
+	ctx := context.Background()
+	req := &secretmanagerpb.AccessSecretVersionRequest{Name: resource}
+	result, err := b.Client.AccessSecretVersion(ctx, req)
+	if err != nil {
+		e := err.Error()
+		return secret.Output{Value: nil, Error: &e}
+	}
+
+	value := string(result.Payload.Data)
+	return secret.Output{Value: &value, Error: nil}
 }
