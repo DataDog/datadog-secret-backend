@@ -7,12 +7,23 @@
 package gcp
 
 import (
+	"context"
+	"fmt"
+
 	secretmanager "cloud.google.com/go/secretmanager/apiv1"
 	"github.com/DataDog/datadog-secret-backend/secret"
+	"github.com/mitchellh/mapstructure"
 )
 
+// SessionBackendConfig is the configuration for GCP session
+type SessionBackendConfig struct {
+	ProjectID string `mapstructure:"project_id"`
+}
+
 // SecretManagerBackendConfig is the configuration for GCP Secret Manager backend
-type SecretManagerBackendConfig struct{}
+type SecretManagerBackendConfig struct {
+	Session SessionBackendConfig `mapstructure:"gcp_session"`
+}
 
 // SecretManagerBackend represents backend for GCP Secret Manager
 type SecretManagerBackend struct {
@@ -22,7 +33,22 @@ type SecretManagerBackend struct {
 
 // NewSecretManagerBackend returns a new GCP Secret Manager backend
 func NewSecretManagerBackend(bc map[string]interface{}) (*SecretManagerBackend, error) {
-	return nil, nil
+	backendConfig := SecretManagerBackendConfig{}
+	err := mapstructure.Decode(bc, &backendConfig)
+	if err != nil {
+		return nil, fmt.Errorf("failed to map backend configuration: %s", err)
+	}
+
+	ctx := context.Background()
+	client, err := secretmanager.NewClient(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create secret manager client: %v", err)
+	}
+
+	return &SecretManagerBackend{
+		Config: backendConfig,
+		Client: client,
+	}, nil
 }
 
 func (b *SecretManagerBackend) GetSecretOutput(secretString string) secret.Output {
