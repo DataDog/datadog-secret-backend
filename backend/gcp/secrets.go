@@ -41,6 +41,10 @@ func NewSecretManagerBackend(bc map[string]interface{}) (*SecretManagerBackend, 
 		return nil, fmt.Errorf("failed to map backend configuration: %s", err)
 	}
 
+	if backendConfig.Session.ProjectID == "" {
+		return nil, fmt.Errorf("project_id is required in gcp_session configuration")
+	}
+
 	client, err := secretmanager.NewClient(context.Background())
 	if err != nil {
 		return nil, fmt.Errorf("failed to create secret manager client: %v", err)
@@ -53,9 +57,9 @@ func NewSecretManagerBackend(bc map[string]interface{}) (*SecretManagerBackend, 
 }
 
 func (b *SecretManagerBackend) GetSecretOutput(secretString string) secret.Output {
-	// "secret-name" or "secret-name;version"
+	// "secret-name" or "secret-name@version"
 	sec, version := secretString, "latest"
-	if name, ver, ok := strings.Cut(secretString, ";"); ok {
+	if name, ver, ok := strings.Cut(secretString, "@"); ok {
 		sec, version = name, ver
 	}
 

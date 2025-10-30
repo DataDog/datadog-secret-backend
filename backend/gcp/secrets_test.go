@@ -20,6 +20,17 @@ func TestNewSecretManagerBackend(t *testing.T) {
 	assert.Equal(t, "test-project", backend.Config.Session.ProjectID)
 }
 
+func TestNewSecretManagerBackendMissingProjectID(t *testing.T) {
+	config := map[string]interface{}{
+		"gcp_session": map[string]interface{}{},
+	}
+
+	backend, err := NewSecretManagerBackend(config)
+	assert.Error(t, err)
+	assert.Nil(t, backend)
+	assert.Contains(t, err.Error(), "project_id is required")
+}
+
 func TestGetSecretOutputLocal(t *testing.T) {
 	config := map[string]interface{}{
 		"gcp_session": map[string]interface{}{
@@ -31,7 +42,7 @@ func TestGetSecretOutputLocal(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, backend)
 
-	secretOutput := backend.GetSecretOutput("test-secret-for-gcp-backend")
+	secretOutput := backend.GetSecretOutput("test-secret-for-gcp-backend@latest")
 	fmt.Println(secretOutput)
 	if secretOutput.Error != nil {
 		fmt.Printf("Error fetching secret: %s\n", *secretOutput.Error)
