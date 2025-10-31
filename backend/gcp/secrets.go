@@ -8,29 +8,44 @@ package gcp
 
 import (
 	"context"
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
 	"strings"
 
-	secretmanager "cloud.google.com/go/secretmanager/apiv1"
-	"cloud.google.com/go/secretmanager/apiv1/secretmanagerpb"
 	"github.com/DataDog/datadog-secret-backend/secret"
 	"github.com/mitchellh/mapstructure"
+	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/google"
 )
 
-// SessionBackendConfig is the configuration for GCP session
-type SessionBackendConfig struct {
-	ProjectID string `mapstructure:"project_id"`
-}
+const (
+	secretManagerScope = "https://www.googleapis.com/auth/cloud-platform"
+	serviceEndpoint    = "https://secretmanager.googleapis.com/v1"
+)
 
 // SecretManagerBackendConfig is the configuration for GCP Secret Manager backend
 type SecretManagerBackendConfig struct {
-	Session SessionBackendConfig `mapstructure:"gcp_session"`
+	Session struct {
+		ProjectID string `mapstructure:"project_id"`
+	} `mapstructure:"gcp_session"`
 }
 
 // SecretManagerBackend represents backend for GCP Secret Manager
 type SecretManagerBackend struct {
 	Config SecretManagerBackendConfig
-	Client *secretmanager.Client
+	Client *http.Client
+}
+
+// https://docs.cloud.google.com/secret-manager/docs/reference/rest/v1/AccessSecretVersionResponse
+type accessSecretVersionResponse struct {
+	Name    string `json:"name"`
+	Payload struct {
+		Data       string `json:"data"`
+		DataCRC32C string `json:"dataCrc32c"`
+	} `json:"payload"`
 }
 
 // NewSecretManagerBackend returns a new GCP Secret Manager backend
@@ -45,14 +60,17 @@ func NewSecretManagerBackend(bc map[string]interface{}) (*SecretManagerBackend, 
 		return nil, fmt.Errorf("project_id is required in gcp_session configuration")
 	}
 
-	client, err := secretmanager.NewClient(context.Background())
+	// use application default credentials (ADC) to authenticate
+	ctx := context.Background()
+	credentials, err := google.FindDefaultCredentials(ctx, secretManagerScope)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create secret manager client: %v", err)
+		return nil, fmt.Errorf("failed to find default credentials: %v", err)
 	}
 
+	// oauth2.NewClient automatically adds the Bearer token to all requests
 	return &SecretManagerBackend{
 		Config: backendConfig,
-		Client: client,
+		Client: oauth2.NewClient(ctx, credentials.TokenSource),
 	}, nil
 }
 
@@ -63,17 +81,48 @@ func (b *SecretManagerBackend) GetSecretOutput(secretString string) secret.Outpu
 		sec, version = name, ver
 	}
 
-	// projects/{project}/secrets/{secret}/versions/{version}
-	resource := fmt.Sprintf("projects/%s/secrets/%s/versions/%s", b.Config.Session.ProjectID, sec, version)
+	// https://secretmanager.googleapis.com/v1/projects/{project}/secrets/{secret}/versions/{version}:access
+	url := fmt.Sprintf("%s/projects/%s/secrets/%s/versions/%s:access",
+		serviceEndpoint, b.Config.Session.ProjectID, sec, version)
 
 	ctx := context.Background()
-	req := &secretmanagerpb.AccessSecretVersionRequest{Name: resource}
-	result, err := b.Client.AccessSecretVersion(ctx, req)
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
-		e := err.Error()
+		e := fmt.Sprintf("failed to create request: %v", err)
 		return secret.Output{Value: nil, Error: &e}
 	}
 
-	value := string(result.Payload.Data)
+	resp, err := b.Client.Do(req)
+	if err != nil {
+		e := fmt.Sprintf("failed to access secret: %v", err)
+		return secret.Output{Value: nil, Error: &e}
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		e := fmt.Sprintf("failed to read response: %v", err)
+		return secret.Output{Value: nil, Error: &e}
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		e := fmt.Sprintf("API error (status %d): %s", resp.StatusCode, string(body))
+		return secret.Output{Value: nil, Error: &e}
+	}
+
+	var result accessSecretVersionResponse
+	if err := json.Unmarshal(body, &result); err != nil {
+		e := fmt.Sprintf("failed to parse response: %v", err)
+		return secret.Output{Value: nil, Error: &e}
+	}
+
+	// payload data is base64-encoded
+	decoded, err := base64.StdEncoding.DecodeString(result.Payload.Data)
+	if err != nil {
+		e := fmt.Sprintf("failed to decode secret data: %v", err)
+		return secret.Output{Value: nil, Error: &e}
+	}
+
+	value := string(decoded)
 	return secret.Output{Value: &value, Error: nil}
 }
