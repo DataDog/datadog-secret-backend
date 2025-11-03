@@ -73,6 +73,7 @@ func NewSecretManagerBackend(bc map[string]interface{}) (*SecretManagerBackend, 
 	}, nil
 }
 
+// GetSecretOutput retrieves a secret from GCP Secret Manager
 func (b *SecretManagerBackend) GetSecretOutput(secretString string) secret.Output {
 	// "secret-name" or "secret-name@version"
 	sec, version := secretString, "latest"

@@ -43,7 +43,9 @@ func mockSecretManagerServer(secrets map[string]string) *httptest.Server {
 				Data: base64.StdEncoding.EncodeToString([]byte(value)),
 			},
 		}
-		json.NewEncoder(w).Encode(response)
+		if err := json.NewEncoder(w).Encode(response); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
 	}))
 }
 
@@ -197,9 +199,8 @@ func TestSecretManagerBackendVersioning(t *testing.T) {
 }
 
 func TestSecretManagerBackendServerError(t *testing.T) {
-	mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusForbidden)
-		w.Write([]byte(`{"error": "permission denied"}`))
+	mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		http.Error(w, `{"error": "permission denied"}`, http.StatusForbidden)
 	}))
 	defer mockServer.Close()
 
