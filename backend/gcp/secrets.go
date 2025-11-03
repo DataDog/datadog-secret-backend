@@ -21,10 +21,9 @@ import (
 	"golang.org/x/oauth2/google"
 )
 
-const (
-	secretManagerScope = "https://www.googleapis.com/auth/cloud-platform"
-	serviceEndpoint    = "https://secretmanager.googleapis.com/v1"
-)
+const secretManagerScope = "https://www.googleapis.com/auth/cloud-platform"
+
+var serviceEndpoint = "https://secretmanager.googleapis.com/v1"
 
 // SecretManagerBackendConfig is the configuration for GCP Secret Manager backend
 type SecretManagerBackendConfig struct {
