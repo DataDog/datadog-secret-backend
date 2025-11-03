@@ -3,10 +3,9 @@ package gcp
 import (
 	"encoding/base64"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"strings"
+	"regexp"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -14,23 +13,33 @@ import (
 
 // mockSecretManagerServer creates a test HTTP server that mocks GCP Secret Manager
 func mockSecretManagerServer(secrets map[string]string) *httptest.Server {
+	re := regexp.MustCompile(`secrets/([^/]+)/versions/([^:]+)`)
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		for name, value := range secrets {
-			if strings.Contains(r.URL.Path, fmt.Sprintf("secrets/%s/versions", name)) {
-				response := accessSecretVersionResponse{
-					Payload: struct {
-						Data       string `json:"data"`
-						DataCRC32C string `json:"dataCrc32c"`
-					}{
-						Data: base64.StdEncoding.EncodeToString([]byte(value)),
-					},
-				}
-				json.NewEncoder(w).Encode(response)
-				return
-			}
+		matches := re.FindStringSubmatch(r.URL.Path)
+		if len(matches) != 3 {
+			w.WriteHeader(http.StatusBadRequest)
+			return
 		}
-		w.WriteHeader(http.StatusNotFound)
-		w.Write([]byte(`{"error": "not found"}`))
+
+		name, version := matches[1], matches[2]
+		value, ok := secrets[name+"@"+version]
+		if !ok {
+			value, ok = secrets[name]
+		}
+		if !ok {
+			http.Error(w, `{"error":"not found"}`, http.StatusNotFound)
+			return
+		}
+
+		response := accessSecretVersionResponse{
+			Payload: struct {
+				Data       string `json:"data"`
+				DataCRC32C string `json:"dataCrc32c"`
+			}{
+				Data: base64.StdEncoding.EncodeToString([]byte(value)),
+			},
+		}
+		json.NewEncoder(w).Encode(response)
 	}))
 }
 
@@ -127,9 +136,11 @@ func TestSecretManagerBackend(t *testing.T) {
 	}
 }
 
-func TestSecretManagerBackendVersionParsing(t *testing.T) {
+func TestSecretManagerBackendVersioning(t *testing.T) {
 	mockServer := mockSecretManagerServer(map[string]string{
-		"my-secret": "secret-value",
+		"secret@latest": "value-latest",
+		"secret@1":      "value-v1",
+		"secret@2":      "value-v2",
 	})
 	defer mockServer.Close()
 
@@ -151,19 +162,24 @@ func TestSecretManagerBackendVersionParsing(t *testing.T) {
 		value  string
 	}{
 		{
-			name:   "default version",
-			secret: "my-secret",
-			value:  "secret-value",
+			name:   "default version uses latest",
+			secret: "secret",
+			value:  "value-latest",
 		},
 		{
-			name:   "latest version",
-			secret: "my-secret@latest",
-			value:  "secret-value",
+			name:   "explicit latest version",
+			secret: "secret@latest",
+			value:  "value-latest",
 		},
 		{
-			name:   "explicit version number",
-			secret: "my-secret@1",
-			value:  "secret-value",
+			name:   "version 1",
+			secret: "secret@1",
+			value:  "value-v1",
+		},
+		{
+			name:   "version 2",
+			secret: "secret@2",
+			value:  "value-v2",
 		},
 	}
 
@@ -176,7 +192,7 @@ func TestSecretManagerBackendVersionParsing(t *testing.T) {
 	}
 }
 
-func TestSecretManagerBackend_ErrorHandling(t *testing.T) {
+func TestSecretManagerBackendServerError(t *testing.T) {
 	mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusForbidden)
 		w.Write([]byte(`{"error": "permission denied"}`))
