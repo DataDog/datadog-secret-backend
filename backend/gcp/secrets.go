@@ -76,9 +76,10 @@ func NewSecretManagerBackend(bc map[string]interface{}) (*SecretManagerBackend, 
 // GetSecretOutput retrieves a secret from GCP Secret Manager
 func (b *SecretManagerBackend) GetSecretOutput(secretString string) secret.Output {
 	// "secret-name" or "secret-name@version"
-	sec, version := secretString, "latest"
+	version := "latest"
 	if name, ver, ok := strings.Cut(secretString, "@"); ok {
-		sec, version = name, ver
+		secretString = name
+		 version = ver
 	}
 
 	// https://secretmanager.googleapis.com/v1/projects/{project}/secrets/{secret}/versions/{version}:access
