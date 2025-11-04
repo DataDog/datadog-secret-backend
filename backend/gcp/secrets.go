@@ -79,12 +79,12 @@ func (b *SecretManagerBackend) GetSecretOutput(secretString string) secret.Outpu
 	version := "latest"
 	if name, ver, ok := strings.Cut(secretString, "@"); ok {
 		secretString = name
-		 version = ver
+		version = ver
 	}
 
 	// https://secretmanager.googleapis.com/v1/projects/{project}/secrets/{secret}/versions/{version}:access
 	url := fmt.Sprintf("%s/projects/%s/secrets/%s/versions/%s:access",
-		serviceEndpoint, b.Config.Session.ProjectID, sec, version)
+		serviceEndpoint, b.Config.Session.ProjectID, secretString, version)
 
 	ctx := context.Background()
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
