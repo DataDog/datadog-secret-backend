@@ -28,7 +28,7 @@ func mockSecretManagerServer(secrets map[string]string) *httptest.Server {
 		name, version := matches[1], matches[2]
 		value, ok := secrets[name+"@"+version]
 		if !ok {
-			if value, ok = secrets[name];  !ok {
+			if value, ok = secrets[name]; !ok {
 				http.Error(w, `{"error":"not found"}`, http.StatusNotFound)
 				return
 			}
@@ -99,7 +99,7 @@ func TestSecretManagerBackend(t *testing.T) {
 	}
 
 	// overrides serviceEndpoint to point to the mock server
-	defer func (url string) { serviceEndpoint = url } (serviceEndpoint)
+	defer func(url string) { serviceEndpoint = url }(serviceEndpoint)
 	serviceEndpoint = mockServer.URL
 
 	tests := []struct {
@@ -160,6 +160,7 @@ func TestSecretManagerBackendVersioning(t *testing.T) {
 	}
 
 	// overrides serviceEndpoint to point to the mock server
+	defer func(url string) { serviceEndpoint = url }(serviceEndpoint)
 	serviceEndpoint = mockServer.URL
 
 	tests := []struct {
@@ -214,6 +215,7 @@ func TestSecretManagerBackendServerError(t *testing.T) {
 	}
 
 	// overrides serviceEndpoint to point to the mock server
+	defer func(url string) { serviceEndpoint = url }(serviceEndpoint)
 	serviceEndpoint = mockServer.URL
 
 	output := backend.GetSecretOutput("any-secret")
