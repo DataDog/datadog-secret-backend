@@ -99,6 +99,7 @@ func TestSecretManagerBackend(t *testing.T) {
 	}
 
 	// overrides serviceEndpoint to point to the mock server
+	defer func (url string) { serviceEndpoint = url } (serviceEndpoint)
 	serviceEndpoint = mockServer.URL
 
 	tests := []struct {
