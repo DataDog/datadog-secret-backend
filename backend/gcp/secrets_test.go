@@ -28,11 +28,10 @@ func mockSecretManagerServer(secrets map[string]string) *httptest.Server {
 		name, version := matches[1], matches[2]
 		value, ok := secrets[name+"@"+version]
 		if !ok {
-			value, ok = secrets[name]
-		}
-		if !ok {
-			http.Error(w, `{"error":"not found"}`, http.StatusNotFound)
-			return
+			if value, ok = secrets[name];  !ok {
+				http.Error(w, `{"error":"not found"}`, http.StatusNotFound)
+				return
+			}
 		}
 
 		response := accessSecretVersionResponse{
