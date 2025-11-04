@@ -14,6 +14,7 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/DataDog/datadog-secret-backend/secret"
 	"github.com/mitchellh/mapstructure"
@@ -86,7 +87,9 @@ func (b *SecretManagerBackend) GetSecretOutput(secretString string) secret.Outpu
 	url := fmt.Sprintf("%s/projects/%s/secrets/%s/versions/%s:access",
 		serviceEndpoint, b.Config.Session.ProjectID, secretString, version)
 
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
 		e := fmt.Sprintf("failed to create request: %v", err)
