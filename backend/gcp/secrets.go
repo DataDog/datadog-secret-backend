@@ -100,14 +100,14 @@ func (b *SecretManagerBackend) GetSecretOutput(secretString string) secret.Outpu
 	}
 	defer resp.Body.Close()
 
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		e := fmt.Sprintf("failed to read response: %v", err)
+	if resp.StatusCode != http.StatusOK {
+		e := fmt.Sprintf("API error (status %d)", resp.StatusCode)
 		return secret.Output{Value: nil, Error: &e}
 	}
 
-	if resp.StatusCode != http.StatusOK {
-		e := fmt.Sprintf("API error (status %d): %s", resp.StatusCode, string(body))
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		e := fmt.Sprintf("failed to read response: %v", err)
 		return secret.Output{Value: nil, Error: &e}
 	}
 
