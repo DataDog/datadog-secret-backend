@@ -17,7 +17,6 @@ import (
 	"github.com/hashicorp/vault/api"
 	"github.com/hashicorp/vault/api/auth/approle"
 	"github.com/hashicorp/vault/api/auth/aws"
-	"github.com/hashicorp/vault/api/auth/kubernetes"
 	"github.com/hashicorp/vault/api/auth/ldap"
 	"github.com/hashicorp/vault/api/auth/userpass"
 	"github.com/mitchellh/mapstructure"
@@ -134,38 +133,8 @@ func newVaultConfigFromBackendConfig(sessionConfig VaultSessionBackendConfig) (a
 	}
 
 	if sessionConfig.VaultAuthType == "kubernetes" {
-		role := os.Getenv("DD_SECRETS_VAULT_ROLE")
-		if role == "" {
-			role = sessionConfig.VaultKubernetesRole
-		}
-		if role == "" {
-			return nil, fmt.Errorf("kubernetes role not specified")
-		}
-
-		jwtToken, err := getKubernetesJWTToken(sessionConfig)
-		if err != nil {
-			return nil, fmt.Errorf("failed to get Kubernetes JWT token: %w", err)
-		}
-
-		opts := []kubernetes.LoginOption{
-			kubernetes.WithServiceAccountToken(jwtToken),
-		}
-
-		authPath := os.Getenv("DD_SECRETS_VAULT_AUTH_PATH")
-		if authPath == "" {
-			authPath = sessionConfig.VaultKubernetesMountPath
-		}
-		authPath = strings.TrimPrefix(authPath, "auth/")
-		authPath = strings.TrimSuffix(authPath, "/login")
-
-		if authPath != "" {
-			opts = append(opts, kubernetes.WithMountPath(authPath))
-		}
-
-		auth, err = kubernetes.NewKubernetesAuth(role, opts...)
-		if err != nil {
-			return nil, fmt.Errorf("failed to create Kubernetes auth method: %w", err)
-		}
+		// Kubernetes login will be handled manually later in NewVaultBackend.
+		return nil, nil
 	}
 
 	return auth, err
@@ -214,10 +183,48 @@ func NewVaultBackend(bc map[string]interface{}) (*VaultBackend, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize vault session: %s", err)
 	}
-	if authMethod != nil {
+
+	// Manual Kubernetes auth handling
+	if backendConfig.VaultSession.VaultAuthType == "kubernetes" {
+		role := os.Getenv("DD_SECRETS_VAULT_ROLE")
+		if role == "" {
+			role = backendConfig.VaultSession.VaultKubernetesRole
+		}
+		if role == "" {
+			return nil, fmt.Errorf("kubernetes role not specified")
+		}
+
+		jwtToken, err := getKubernetesJWTToken(backendConfig.VaultSession)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get Kubernetes JWT token: %w", err)
+		}
+
+		authPath := os.Getenv("DD_SECRETS_VAULT_AUTH_PATH")
+		if authPath == "" {
+			authPath = backendConfig.VaultSession.VaultKubernetesMountPath
+		}
+
+		// Perform the login directly using the configured Vault client
+		secret, err := client.Logical().Write(authPath, map[string]interface{}{
+			"jwt":  jwtToken,
+			"role": role,
+		})
+		if err != nil {
+			return nil, fmt.Errorf("failed to authenticate to Vault: %w", err)
+		}
+
+		token, err := secret.TokenID()
+		if err != nil {
+			return nil, fmt.Errorf("unable to extract token from Vault login response: %w", err)
+		}
+		if token == "" {
+			return nil, fmt.Errorf("vault login response did not return a token or error")
+		}
+		client.SetToken(token)
+	} else if authMethod != nil {
 		authInfo, err := client.Auth().Login(context.TODO(), authMethod)
 		if err != nil {
-			return nil, fmt.Errorf("failed to created auth info: %s", err)
+			return nil, fmt.Errorf("failed to create auth info: %s", err)
 		}
 		if authInfo == nil {
 			return nil, fmt.Errorf("no auth info returned")

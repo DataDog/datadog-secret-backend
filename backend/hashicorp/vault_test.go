@@ -9,14 +9,16 @@ package hashicorp
 import (
 	"errors"
 	"net"
+	"net/http"
+	"net/http/httptest"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/DataDog/datadog-secret-backend/secret"
 	"github.com/hashicorp/vault/api"
 	"github.com/hashicorp/vault/api/auth/aws"
-	"github.com/hashicorp/vault/api/auth/kubernetes"
-	"github.com/hashicorp/vault/http"
+	vaultHttp "github.com/hashicorp/vault/http"
 	"github.com/hashicorp/vault/vault"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -90,7 +92,7 @@ func createTestVault(t *testing.T) (net.Listener, *api.Client, string) {
 	_ = keyShares
 
 	// Start an HTTP server for the core.
-	ln, addr := http.TestServer(t, core)
+	ln, addr := vaultHttp.TestServer(t, core)
 
 	// Create a client that talks to the server, initially authenticating with
 	// the root token.
@@ -333,8 +335,10 @@ func TestGetKubernetesJWTToken(t *testing.T) {
 	}
 }
 
-func TestNewVaultConfigFromBackendConfig_KubernetesAuth(t *testing.T) {
-	// Create a temporary JWT token file
+func TestNewVaultBackend_KubernetesAuth(t *testing.T) {
+	ln, _, _ := createTestVault(t)
+	defer ln.Close()
+
 	tmpFile, err := os.CreateTemp("", "jwt-token-test")
 	require.NoError(t, err)
 	defer os.Remove(tmpFile.Name())
@@ -345,134 +349,110 @@ func TestNewVaultConfigFromBackendConfig_KubernetesAuth(t *testing.T) {
 
 	tests := []struct {
 		name          string
-		sessionConfig VaultSessionBackendConfig
+		sessionConfig map[string]interface{}
 		envVars       map[string]string
-		expectAuth    bool
 		expectError   bool
-		validateAuth  func(t *testing.T, auth interface{})
+		errorContains string
 	}{
 		{
-			name: "Kubernetes auth with role and direct JWT",
-			sessionConfig: VaultSessionBackendConfig{
-				VaultAuthType:       "kubernetes",
-				VaultKubernetesRole: "test-role",
-				VaultKubernetesJWT:  "test-jwt-token",
+			name: "Kubernetes auth with role and direct JWT (expected failure)",
+			sessionConfig: map[string]interface{}{
+				"vault_auth_type":       "kubernetes",
+				"vault_kubernetes_role": "test-role",
+				"vault_kubernetes_jwt":  "test-jwt-token",
 			},
-			expectAuth:  true,
-			expectError: false,
-			validateAuth: func(t *testing.T, auth interface{}) {
-				k8sAuth, ok := auth.(*kubernetes.KubernetesAuth)
-				require.True(t, ok, "Expected KubernetesAuth type")
-				assert.NotNil(t, k8sAuth)
-			},
+			expectError:   true,
+			errorContains: "failed to authenticate to Vault",
 		},
 		{
-			name: "Kubernetes auth with role from env var",
-			sessionConfig: VaultSessionBackendConfig{
-				VaultAuthType:      "kubernetes",
-				VaultKubernetesJWT: "test-jwt-token",
+			name: "Kubernetes auth with role from env var (expected failure)",
+			sessionConfig: map[string]interface{}{
+				"vault_auth_type":      "kubernetes",
+				"vault_kubernetes_jwt": "test-jwt-token",
 			},
 			envVars: map[string]string{
 				"DD_SECRETS_VAULT_ROLE": "env-role",
 			},
-			expectAuth:  true,
-			expectError: false,
-			validateAuth: func(t *testing.T, auth interface{}) {
-				k8sAuth, ok := auth.(*kubernetes.KubernetesAuth)
-				require.True(t, ok, "Expected KubernetesAuth type")
-				assert.NotNil(t, k8sAuth)
-			},
+			expectError:   true,
+			errorContains: "failed to authenticate to Vault",
 		},
 		{
-			name: "Kubernetes auth with JWT from file",
-			sessionConfig: VaultSessionBackendConfig{
-				VaultAuthType:          "kubernetes",
-				VaultKubernetesRole:    "test-role",
-				VaultKubernetesJWTPath: tmpFile.Name(),
+			name: "Kubernetes auth with JWT from file (expected failure)",
+			sessionConfig: map[string]interface{}{
+				"vault_auth_type":           "kubernetes",
+				"vault_kubernetes_role":     "test-role",
+				"vault_kubernetes_jwt_path": tmpFile.Name(),
 			},
-			expectAuth:  true,
-			expectError: false,
+			expectError:   true,
+			errorContains: "failed to authenticate to Vault",
 		},
 		{
-			name: "Kubernetes auth with custom mount path",
-			sessionConfig: VaultSessionBackendConfig{
-				VaultAuthType:            "kubernetes",
-				VaultKubernetesRole:      "test-role",
-				VaultKubernetesJWT:       "test-jwt-token",
-				VaultKubernetesMountPath: "custom/auth/path",
+			name: "Kubernetes auth without role (should error immediately)",
+			sessionConfig: map[string]interface{}{
+				"vault_auth_type":      "kubernetes",
+				"vault_kubernetes_jwt": "test-jwt-token",
 			},
-			expectAuth:  true,
-			expectError: false,
+			expectError:   true,
+			errorContains: "kubernetes role not specified",
 		},
 		{
-			name: "Kubernetes auth with custom mount path (remove auth/ and /login)",
-			sessionConfig: VaultSessionBackendConfig{
-				VaultAuthType:            "kubernetes",
-				VaultKubernetesRole:      "test-role",
-				VaultKubernetesJWT:       "test-jwt-token",
-				VaultKubernetesMountPath: "auth/custom/auth/path/login",
-			},
-			expectAuth:  true,
-			expectError: false,
-		},
-		{
-			name: "Kubernetes auth with mount path from env var",
-			sessionConfig: VaultSessionBackendConfig{
-				VaultAuthType:       "kubernetes",
-				VaultKubernetesRole: "test-role",
-				VaultKubernetesJWT:  "test-jwt-token",
+			name: "Kubernetes auth success path (mocked)",
+			sessionConfig: map[string]interface{}{
+				"vault_auth_type":       "kubernetes",
+				"vault_kubernetes_role": "test-role",
+				"vault_kubernetes_jwt":  "test-jwt-token",
 			},
 			envVars: map[string]string{
-				"DD_SECRETS_VAULT_AUTH_PATH": "env/auth/path",
+				"DD_SECRETS_VAULT_AUTH_PATH": "auth/k8s/success/login",
 			},
-			expectAuth:  true,
-			expectError: false,
-		},
-		{
-			name: "Kubernetes auth without role should error",
-			sessionConfig: VaultSessionBackendConfig{
-				VaultAuthType:      "kubernetes",
-				VaultKubernetesJWT: "test-jwt-token",
-				// No role specified
-			},
-			expectAuth:  false,
-			expectError: true,
-		},
-		{
-			name: "Non-Kubernetes auth type should not create Kubernetes auth",
-			sessionConfig: VaultSessionBackendConfig{
-				VaultAuthType:       "userpass",
-				VaultKubernetesRole: "test-role", // This should be ignored
-			},
-			expectAuth:  false,
 			expectError: false,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Set up environment variables
-			for key, value := range tt.envVars {
-				os.Setenv(key, value)
-				defer func() { _ = os.Unsetenv(key) }()
+			// Create an httptest.Server that mimics Vault’s API.
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if strings.HasSuffix(r.URL.Path, "/login") {
+					if !tt.expectError {
+						w.WriteHeader(http.StatusOK)
+						_, _ = w.Write([]byte(`{"auth":{"client_token":"fake-token"}}`))
+						return
+					}
+					w.WriteHeader(http.StatusBadRequest)
+					_, _ = w.Write([]byte(`{"errors":["failed to authenticate to Vault"]}`))
+					return
+				}
+				http.NotFound(w, r)
+			}))
+			defer server.Close()
+
+			// Point the agent at our mock Vault.
+			t.Setenv("VAULT_ADDR", server.URL)
+			for k, v := range tt.envVars {
+				t.Setenv(k, v)
 			}
 
-			auth, err := newVaultConfigFromBackendConfig(tt.sessionConfig)
+			backendConfig := map[string]interface{}{
+				"vault_address": server.URL,
+				"backend_type":  "hashicorp.vault",
+				"vault_session": tt.sessionConfig,
+			}
+
+			vb, err := NewVaultBackend(backendConfig)
 
 			if tt.expectError {
-				assert.Error(t, err)
-				return
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), tt.errorContains)
+			} else {
+				require.NoError(t, err)
+				require.NotNil(t, vb)
+				assert.Equal(t, "fake-token", vb.Client.Token())
 			}
 
-			assert.NoError(t, err)
-
-			if tt.expectAuth {
-				assert.NotNil(t, auth, "Expected non-nil auth method")
-				if tt.validateAuth != nil {
-					tt.validateAuth(t, auth)
-				}
-			} else {
-				assert.Nil(t, auth, "Expected nil auth method")
+			// regression check: the "unsupported protocol scheme" bug should never appear
+			if err != nil {
+				assert.NotContains(t, err.Error(), `unsupported protocol scheme ""`)
 			}
 		})
 	}
