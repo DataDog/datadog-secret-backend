@@ -76,16 +76,16 @@ func NewSecretManagerBackend(bc map[string]interface{}) (*SecretManagerBackend, 
 
 // GetSecretOutput retrieves a secret from GCP Secret Manager
 func (b *SecretManagerBackend) GetSecretOutput(secretString string) secret.Output {
-	// "secret-name" or "secret-name@version"
-	version := "latest"
-	if name, ver, ok := strings.Cut(secretString, "@"); ok {
-		secretString = name
-		version = ver
+	// parse: secret-name[@version][;json-key]
+	secretName, key, _ := strings.Cut(secretString, ";")
+	secretName, version, _ := strings.Cut(secretName, "@")
+	if version == "" {
+		version = "latest"
 	}
 
 	// https://secretmanager.googleapis.com/v1/projects/{project}/secrets/{secret}/versions/{version}:access
 	url := fmt.Sprintf("%s/projects/%s/secrets/%s/versions/%s:access",
-		serviceEndpoint, b.Config.Session.ProjectID, secretString, version)
+		serviceEndpoint, b.Config.Session.ProjectID, secretName, version)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -128,5 +128,17 @@ func (b *SecretManagerBackend) GetSecretOutput(secretString string) secret.Outpu
 	}
 
 	value := string(decoded)
-	return secret.Output{Value: &value, Error: nil}
+	if key == "" {
+		return secret.Output{Value: &value, Error: nil}
+	}
+
+	var secretValue map[string]string
+	if json.Unmarshal(decoded, &secretValue) == nil {
+		if val, ok := secretValue[key]; ok {
+			return secret.Output{Value: &val, Error: nil}
+		}
+	}
+
+	e := fmt.Sprintf("key '%s' not found in secret JSON", key)
+	return secret.Output{Value: nil, Error: &e}
 }

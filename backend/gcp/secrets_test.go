@@ -223,3 +223,103 @@ func TestSecretManagerBackendServerError(t *testing.T) {
 	assert.NotNil(t, output.Error)
 	assert.Contains(t, *output.Error, "403")
 }
+
+func TestSecretManagerBackendJSONSupport(t *testing.T) {
+	valueJ := `{"key-1":"val-1","key-2":"val-2"}`
+
+	mockServer := mockSecretManagerServer(map[string]string{
+		"secretJ":        valueJ,
+		"secretJ@latest": valueJ,
+		"secretJ@1":      `{"key-1":"val-1-v1"}`,
+		"secretP":        "valueP",
+	})
+	defer mockServer.Close()
+
+	backend := &SecretManagerBackend{
+		Config: SecretManagerBackendConfig{
+			Session: struct {
+				ProjectID string `mapstructure:"project_id"`
+			}{ProjectID: "test-project"},
+		},
+		Client: mockServer.Client(),
+	}
+
+	// overrides serviceEndpoint to point to the mock server
+	defer func(url string) { serviceEndpoint = url }(serviceEndpoint)
+	serviceEndpoint = mockServer.URL
+
+	tests := []struct {
+		name   string
+		secret string
+		value  string
+		fail   bool
+	}{
+		{
+			name:   "fetch JSON secret without key returns whole JSON",
+			secret: "secretJ",
+			value:  valueJ,
+			fail:   false,
+		},
+		{
+			name:   "fetch JSON secret with key extracts value",
+			secret: "secretJ;key-1",
+			value:  "val-1",
+			fail:   false,
+		},
+		{
+			name:   "fetch JSON secret with different key",
+			secret: "secretJ;key-2",
+			value:  "val-2",
+			fail:   false,
+		},
+		{
+			name:   "fetch JSON secret with non-existent key fails",
+			secret: "secretJ;nonexistent",
+			fail:   true,
+		},
+		{
+			name:   "fetch plain secret without key",
+			secret: "secretP",
+			value:  "valueP",
+			fail:   false,
+		},
+		{
+			name:   "fetch plain secret with key fails (not JSON)",
+			secret: "secretP;any-key",
+			fail:   true,
+		},
+		// this will typically never be used
+		{
+			name:   "JSON with version but no key returns whole JSON",
+			secret: "secretJ@1",
+			value:  `{"key-1":"val-1-v1"}`,
+			fail:   false,
+		},
+		{
+			name:   "JSON with version and key",
+			secret: "secretJ@latest;key-1",
+			value:  "val-1",
+			fail:   false,
+		},
+		{
+			name:   "JSON with specific version and key",
+			secret: "secretJ@1;key-1",
+			value:  "val-1-v1",
+			fail:   false,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			output := backend.GetSecretOutput(test.secret)
+			if test.fail {
+				assert.Nil(t, output.Value)
+				assert.NotNil(t, output.Error)
+			} else {
+				assert.NotNil(t, output.Value)
+				assert.Equal(t, test.value, *output.Value)
+				assert.Nil(t, output.Error)
+			}
+		})
+	}
+}
