@@ -26,7 +26,7 @@ func mockSecretManagerServer(secrets map[string]string) *httptest.Server {
 		}
 
 		name, version := matches[1], matches[2]
-		value, ok := secrets[name+"@"+version]
+		value, ok := secrets[name+";"+version+";"]
 		if !ok {
 			if value, ok = secrets[name]; !ok {
 				http.Error(w, `{"error":"not found"}`, http.StatusNotFound)
@@ -116,7 +116,7 @@ func TestSecretManagerBackend(t *testing.T) {
 		},
 		{
 			name:   "secret with explicit version",
-			secret: "secretY@latest",
+			secret: "secretY;latest;",
 			value:  "valueY",
 			fail:   false,
 		},
@@ -144,9 +144,9 @@ func TestSecretManagerBackend(t *testing.T) {
 
 func TestSecretManagerBackendVersioning(t *testing.T) {
 	mockServer := mockSecretManagerServer(map[string]string{
-		"secret@latest": "value-latest",
-		"secret@1":      "value-v1",
-		"secret@2":      "value-v2",
+		"secret;latest;": "value-latest",
+		"secret;1;":      "value-v1",
+		"secret;2;":      "value-v2",
 	})
 	defer mockServer.Close()
 
@@ -175,17 +175,17 @@ func TestSecretManagerBackendVersioning(t *testing.T) {
 		},
 		{
 			name:   "explicit latest version",
-			secret: "secret@latest",
+			secret: "secret;latest;",
 			value:  "value-latest",
 		},
 		{
 			name:   "version 1",
-			secret: "secret@1",
+			secret: "secret;1;",
 			value:  "value-v1",
 		},
 		{
 			name:   "version 2",
-			secret: "secret@2",
+			secret: "secret;2;",
 			value:  "value-v2",
 		},
 	}
@@ -228,10 +228,10 @@ func TestSecretManagerBackendJSONSupport(t *testing.T) {
 	valueJ := `{"key-1":"val-1","key-2":"val-2"}`
 
 	mockServer := mockSecretManagerServer(map[string]string{
-		"secretJ":        valueJ,
-		"secretJ@latest": valueJ,
-		"secretJ@1":      `{"key-1":"val-1-v1"}`,
-		"secretP":        "valueP",
+		"secretJ":         valueJ,
+		"secretJ;latest;": valueJ,
+		"secretJ;1;":      `{"key-1":"val-1-v1"}`,
+		"secretP":         "valueP",
 	})
 	defer mockServer.Close()
 
@@ -291,19 +291,19 @@ func TestSecretManagerBackendJSONSupport(t *testing.T) {
 		// this will typically never be used
 		{
 			name:   "JSON with version but no key returns whole JSON",
-			secret: "secretJ@1",
+			secret: "secretJ;1;",
 			value:  `{"key-1":"val-1-v1"}`,
 			fail:   false,
 		},
 		{
 			name:   "JSON with version and key",
-			secret: "secretJ@latest;key-1",
+			secret: "secretJ;latest;key-1",
 			value:  "val-1",
 			fail:   false,
 		},
 		{
 			name:   "JSON with specific version and key",
-			secret: "secretJ@1;key-1",
+			secret: "secretJ;1;key-1",
 			value:  "val-1-v1",
 			fail:   false,
 		},
