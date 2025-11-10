@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/DataDog/datadog-secret-backend/secret"
 	"github.com/hashicorp/vault/api"
@@ -215,7 +216,10 @@ func NewVaultBackend(bc map[string]interface{}) (*VaultBackend, error) {
 		return nil, fmt.Errorf("failed to initialize vault session: %s", err)
 	}
 	if authMethod != nil {
-		authInfo, err := client.Auth().Login(context.TODO(), authMethod)
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+
+		authInfo, err := client.Auth().Login(ctx, authMethod)
 		if err != nil {
 			return nil, fmt.Errorf("failed to created auth info: %s", err)
 		}
@@ -236,15 +240,15 @@ func NewVaultBackend(bc map[string]interface{}) (*VaultBackend, error) {
 }
 
 // GetSecretOutput returns a the value for a specific secret
-func (b *VaultBackend) GetSecretOutput(secretString string) secret.Output {
+func (b *VaultBackend) GetSecretOutput(ctx context.Context, secretString string) secret.Output {
 	if strings.HasPrefix(secretString, "vault://") {
-		return b.handleVaultURIFormat(secretString)
+		return b.handleVaultURIFormat(ctx, secretString)
 	}
 
-	return b.handleTypicalFormat(secretString)
+	return b.handleTypicalFormat(ctx, secretString)
 }
 
-func (b *VaultBackend) handleVaultURIFormat(secretString string) secret.Output {
+func (b *VaultBackend) handleVaultURIFormat(ctx context.Context, secretString string) secret.Output {
 	pathWithKey := strings.TrimPrefix(secretString, "vault://")
 	parts := strings.SplitN(pathWithKey, "#", 2)
 	if len(parts) != 2 {
@@ -271,7 +275,7 @@ func (b *VaultBackend) handleVaultURIFormat(secretString string) secret.Output {
 		return secret.Output{Value: nil, Error: &es}
 	}
 
-	sec, err := b.Client.Logical().Read(secretPath)
+	sec, err := b.Client.Logical().ReadWithContext(ctx, secretPath)
 	if err != nil {
 		es := err.Error()
 		return secret.Output{Value: nil, Error: &es}
@@ -350,7 +354,7 @@ func (b *VaultBackend) handleVaultURIFormat(secretString string) secret.Output {
 	return secret.Output{Value: &valueStr, Error: nil}
 }
 
-func (b *VaultBackend) handleTypicalFormat(secretString string) secret.Output {
+func (b *VaultBackend) handleTypicalFormat(ctx context.Context, secretString string) secret.Output {
 	segments := strings.SplitN(secretString, ";", 2)
 	if len(segments) != 2 {
 		es := "invalid secret format, expected 'secret_path;key' or 'vault://path#/json/pointer'"
@@ -368,7 +372,8 @@ func (b *VaultBackend) handleTypicalFormat(secretString string) secret.Output {
 	if isKVv2 {
 		readPath = insertDataPath(secretPath, mountPrefix)
 	}
-	sec, err := b.Client.Logical().Read(readPath)
+
+	sec, err := b.Client.Logical().ReadWithContext(ctx, readPath)
 	if err != nil {
 		es := err.Error()
 		return secret.Output{Value: nil, Error: &es}

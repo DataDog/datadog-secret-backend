@@ -7,6 +7,7 @@
 package hashicorp
 
 import (
+	"context"
 	"errors"
 	"net"
 	"os"
@@ -43,15 +44,16 @@ func TestVaultBackend(t *testing.T) {
 	secretsBackend, err := NewVaultBackend(backendConfig)
 	assert.NoError(t, err)
 
-	secretOutput := secretsBackend.GetSecretOutput("secret/foo;key1")
+	ctx := context.Background()
+	secretOutput := secretsBackend.GetSecretOutput(ctx, "secret/foo;key1")
 	assert.Equal(t, "value1", *secretOutput.Value)
 	assert.Nil(t, secretOutput.Error)
 
-	secretOutput = secretsBackend.GetSecretOutput("secret/foo;key2")
+	secretOutput = secretsBackend.GetSecretOutput(ctx, "secret/foo;key2")
 	assert.Equal(t, "value2", *secretOutput.Value)
 	assert.Nil(t, secretOutput.Error)
 
-	secretOutput = secretsBackend.GetSecretOutput("secret/foo;key_noexist")
+	secretOutput = secretsBackend.GetSecretOutput(ctx, "secret/foo;key_noexist")
 	assert.Nil(t, secretOutput.Value)
 	assert.Equal(t, secret.ErrKeyNotFound.Error(), *secretOutput.Error)
 }
@@ -77,7 +79,8 @@ func TestVaultBackend_KeyNotFound(t *testing.T) {
 	secretsBackend, err := NewVaultBackend(backendConfig)
 	assert.NoError(t, err)
 
-	secretOutput := secretsBackend.GetSecretOutput("secret/foo;key_noexist")
+	ctx := context.Background()
+	secretOutput := secretsBackend.GetSecretOutput(ctx, "secret/foo;key_noexist")
 	assert.Nil(t, secretOutput.Value)
 	assert.Equal(t, secret.ErrKeyNotFound.Error(), *secretOutput.Error)
 }
@@ -228,15 +231,16 @@ func TestVaultBackend_KVV2Support(t *testing.T) {
 	secretsBackend, err := NewVaultBackend(backendConfig)
 	assert.NoError(t, err)
 
-	secretOutput := secretsBackend.GetSecretOutput("kv2/foo;key1")
+	ctx := context.Background()
+	secretOutput := secretsBackend.GetSecretOutput(ctx, "kv2/foo;key1")
 	assert.Equal(t, "value1", *secretOutput.Value)
 	assert.Nil(t, secretOutput.Error)
 
-	secretOutput = secretsBackend.GetSecretOutput("kv2/foo;key2")
+	secretOutput = secretsBackend.GetSecretOutput(ctx, "kv2/foo;key2")
 	assert.Equal(t, "value2", *secretOutput.Value)
 	assert.Nil(t, secretOutput.Error)
 
-	secretOutput = secretsBackend.GetSecretOutput("kv2/foo;not_there")
+	secretOutput = secretsBackend.GetSecretOutput(ctx, "kv2/foo;not_there")
 	assert.Nil(t, secretOutput.Value)
 	assert.Equal(t, secret.ErrKeyNotFound.Error(), *secretOutput.Error)
 }
@@ -613,7 +617,8 @@ func TestVaultBackend_VaultURIFormat(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			secretOutput := secretsBackend.GetSecretOutput(tt.secretString)
+			ctx := context.Background()
+			secretOutput := secretsBackend.GetSecretOutput(ctx, tt.secretString)
 
 			if tt.expectError {
 				assert.Nil(t, secretOutput.Value)
@@ -692,7 +697,8 @@ func TestVaultBackend_VaultURIFormat_KVv2(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			secretOutput := secretsBackend.GetSecretOutput(tt.secretString)
+			ctx := context.Background()
+			secretOutput := secretsBackend.GetSecretOutput(ctx, tt.secretString)
 
 			if tt.expectError {
 				assert.Nil(t, secretOutput.Value)
@@ -726,13 +732,14 @@ func TestVaultBackend_BackwardCompatibility(t *testing.T) {
 	secretsBackend, err := NewVaultBackend(backendConfig)
 	assert.NoError(t, err)
 
+	ctx := context.Background()
 	// Test that old format still works
-	secretOutput := secretsBackend.GetSecretOutput("secret/test;key1")
+	secretOutput := secretsBackend.GetSecretOutput(ctx, "secret/test;key1")
 	assert.Equal(t, "value1", *secretOutput.Value)
 	assert.Nil(t, secretOutput.Error)
 
 	// Test that new format works
-	secretOutput = secretsBackend.GetSecretOutput("vault://secret/test#/key1")
+	secretOutput = secretsBackend.GetSecretOutput(ctx, "vault://secret/test#/key1")
 	assert.Equal(t, "value1", *secretOutput.Value)
 	assert.Nil(t, secretOutput.Error)
 }
@@ -793,7 +800,8 @@ func TestVaultBackend_ErrorHandling(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			secretOutput := secretsBackend.GetSecretOutput(tt.secretString)
+			ctx := context.Background()
+			secretOutput := secretsBackend.GetSecretOutput(ctx, tt.secretString)
 
 			if tt.expectError {
 				assert.Nil(t, secretOutput.Value)
