@@ -109,13 +109,13 @@ func (b *SecretsManagerBackend) GetSecretOutput(secretString string) secret.Outp
 				case string:
 					secretValue = v
 				case map[string]interface{}, []interface{}:
+					// Marshal nested objects/arrays to JSON strings
 					if b, err := json.Marshal(v); err == nil {
 						secretValue = string(b)
 					} else {
 						secretValue = fmt.Sprintf("%v", v)
 					}
 				default:
-					// Convert numbers, booleans, etc. to string
 					secretValue = fmt.Sprintf("%v", v)
 				}
 			} else {
