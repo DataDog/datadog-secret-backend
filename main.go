@@ -54,7 +54,7 @@ func main() {
 
 	// extract timeout from config
 	timeout := 30 * time.Second
-	if val, ok := inputPayload.Config["timeout"]; ok && val != nil {
+	if val, ok := inputPayload.Config["secret_backend_timeout"]; ok && val != nil {
 		if t, ok := val.(float64); ok && t > 0 {
 			timeout = time.Duration(t) * time.Second
 		}
