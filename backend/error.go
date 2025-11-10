@@ -23,7 +23,7 @@ func NewErrorBackend(e error) Backend {
 }
 
 // GetSecretOutput returns a the value for a specific secret
-func (b *errorBackend) GetSecretOutput(ctx context.Context, secretString string) secret.Output {
+func (b *errorBackend) GetSecretOutput(_ context.Context, _ string) secret.Output {
 	return secret.Output{
 		Value: nil,
 		Error: &b.err,
