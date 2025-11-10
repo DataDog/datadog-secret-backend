@@ -52,12 +52,10 @@ func main() {
 
 	backend := backend.Get(inputPayload.Type, inputPayload.Config)
 
-	// extract timeout from config
+	// extract timeout from secret_backend_timeout field (default 30 seconds)
 	timeout := 30 * time.Second
-	if val, ok := inputPayload.Config["secret_backend_timeout"]; ok && val != nil {
-		if t, ok := val.(float64); ok && t > 0 {
-			timeout = time.Duration(t) * time.Second
-		}
+	if inputPayload.SecretBackendTimeout != nil && *inputPayload.SecretBackendTimeout > 0 {
+		timeout = time.Duration(*inputPayload.SecretBackendTimeout) * time.Second
 	}
 
 	secretOutputs := make(map[string]secret.Output, 0)
