@@ -98,14 +98,26 @@ func (b *SecretsManagerBackend) GetSecretOutput(secretString string) secret.Outp
 		secretValue = *out.SecretString
 	} else {
 		// Try to parse as JSON first
-		var jsonSecrets map[string]string
+		var jsonSecrets map[string]interface{}
 		if err := json.Unmarshal([]byte(*out.SecretString), &jsonSecrets); err != nil {
 			// If JSON parsing fails, treat the entire string as the value
 			secretValue = *out.SecretString
 		} else {
 			// If JSON parsing succeeds, look for the specific key
 			if val, ok := jsonSecrets[secretKey]; ok {
-				secretValue = val
+				switch v := val.(type) {
+				case string:
+					secretValue = v
+				case map[string]interface{}, []interface{}:
+					if b, err := json.Marshal(v); err == nil {
+						secretValue = string(b)
+					} else {
+						secretValue = fmt.Sprintf("%v", v)
+					}
+				default:
+					// Convert numbers, booleans, etc. to string
+					secretValue = fmt.Sprintf("%v", v)
+				}
 			} else {
 				es := secret.ErrKeyNotFound.Error()
 				return secret.Output{Value: nil, Error: &es}
