@@ -97,9 +97,11 @@ func (b *SecretsManagerBackend) GetSecretOutput(secretString string) secret.Outp
 	if b.Config.ForceString {
 		secretValue = *out.SecretString
 	} else {
+		decoder := json.NewDecoder(strings.NewReader(*out.SecretString))
+		decoder.UseNumber()
 		// Try to parse as JSON first
 		var jsonSecrets map[string]interface{}
-		if err := json.Unmarshal([]byte(*out.SecretString), &jsonSecrets); err != nil {
+		if err := decoder.Decode(&jsonSecrets); err != nil {
 			// If JSON parsing fails, treat the entire string as the value
 			secretValue = *out.SecretString
 		} else {
@@ -108,6 +110,9 @@ func (b *SecretsManagerBackend) GetSecretOutput(secretString string) secret.Outp
 				switch v := val.(type) {
 				case string:
 					secretValue = v
+				case json.Number:
+					// Preserve exact number string
+					secretValue = v.String()
 				case map[string]interface{}, []interface{}:
 					// Marshal nested objects/arrays to JSON strings
 					if b, err := json.Marshal(v); err == nil {
