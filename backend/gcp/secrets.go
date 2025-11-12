@@ -14,7 +14,6 @@ import (
 	"io"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/DataDog/datadog-secret-backend/secret"
 	"github.com/mitchellh/mapstructure"
@@ -75,7 +74,7 @@ func NewSecretManagerBackend(bc map[string]interface{}) (*SecretManagerBackend, 
 }
 
 // GetSecretOutput retrieves a secret from GCP Secret Manager
-func (b *SecretManagerBackend) GetSecretOutput(secretString string) secret.Output {
+func (b *SecretManagerBackend) GetSecretOutput(ctx context.Context, secretString string) secret.Output {
 	// parse: secret[;key] or secret;version;[key]
 
 	parts := strings.Split(secretString, ";")
@@ -93,9 +92,6 @@ func (b *SecretManagerBackend) GetSecretOutput(secretString string) secret.Outpu
 	// https://secretmanager.googleapis.com/v1/projects/{project}/secrets/{secret}/versions/{version}:access
 	url := fmt.Sprintf("%s/projects/%s/secrets/%s/versions/%s:access",
 		serviceEndpoint, b.Config.Session.ProjectID, secretName, secretVersion)
-
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
 
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {

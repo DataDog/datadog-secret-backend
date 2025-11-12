@@ -5,6 +5,7 @@
 package gcp
 
 import (
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"net/http"
@@ -129,7 +130,7 @@ func TestSecretManagerBackend(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			output := backend.GetSecretOutput(test.secret)
+			output := backend.GetSecretOutput(context.Background(), test.secret)
 			if test.fail {
 				assert.Nil(t, output.Value)
 				assert.NotNil(t, output.Error)
@@ -192,7 +193,7 @@ func TestSecretManagerBackendVersioning(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			output := backend.GetSecretOutput(test.secret)
+			output := backend.GetSecretOutput(context.Background(), test.secret)
 			assert.NotNil(t, output.Value)
 			assert.Equal(t, test.value, *output.Value)
 		})
@@ -218,7 +219,7 @@ func TestSecretManagerBackendServerError(t *testing.T) {
 	defer func(url string) { serviceEndpoint = url }(serviceEndpoint)
 	serviceEndpoint = mockServer.URL
 
-	output := backend.GetSecretOutput("any-secret")
+	output := backend.GetSecretOutput(context.Background(), "any-secret")
 	assert.Nil(t, output.Value)
 	assert.NotNil(t, output.Error)
 	assert.Contains(t, *output.Error, "403")
@@ -311,7 +312,7 @@ func TestSecretManagerBackendJSONSupport(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			output := backend.GetSecretOutput(test.secret)
+			output := backend.GetSecretOutput(context.Background(), test.secret)
 			if test.fail {
 				assert.Nil(t, output.Value)
 				assert.NotNil(t, output.Error)
