@@ -8,7 +8,6 @@
 package backend
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/DataDog/datadog-secret-backend/backend/akeyless"
@@ -22,7 +21,7 @@ import (
 
 // Backend represents the common interface for the secret backends
 type Backend interface {
-	GetSecretOutput(ctx context.Context, secretString string) secret.Output
+	GetSecretOutput(string) secret.Output
 }
 
 // Get initialize and return the requested backend

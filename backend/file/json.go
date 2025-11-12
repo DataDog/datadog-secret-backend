@@ -8,7 +8,6 @@
 package file
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -57,7 +56,7 @@ func NewJSONBackend(bc map[string]interface{}) (
 }
 
 // GetSecretOutput returns a the value for a specific secret
-func (b *JSONBackend) GetSecretOutput(_ context.Context, secretKey string) secret.Output {
+func (b *JSONBackend) GetSecretOutput(secretKey string) secret.Output {
 	if val, ok := b.Secret[secretKey]; ok {
 		return secret.Output{Value: &val, Error: nil}
 	}

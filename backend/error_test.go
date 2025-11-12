@@ -7,7 +7,6 @@
 package backend
 
 import (
-	"context"
 	"fmt"
 	"testing"
 
@@ -17,7 +16,7 @@ import (
 func TestErrorBackend(t *testing.T) {
 	backend := NewErrorBackend(fmt.Errorf("test error"))
 
-	output := backend.GetSecretOutput(context.Background(), "test")
+	output := backend.GetSecretOutput("test")
 	assert.NotNil(t, output.Error)
 	assert.Equal(t, "test error", *output.Error)
 	assert.Nil(t, output.Value)

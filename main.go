@@ -8,7 +8,6 @@
 package main
 
 import (
-	"context"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -16,7 +15,6 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"time"
 
 	"github.com/DataDog/datadog-secret-backend/backend"
 	"github.com/DataDog/datadog-secret-backend/secret"
@@ -52,17 +50,9 @@ func main() {
 
 	backend := backend.Get(inputPayload.Type, inputPayload.Config)
 
-	// extract timeout from secret_backend_timeout field (default 30 seconds)
-	timeout := 30 * time.Second
-	if inputPayload.SecretBackendTimeout != nil && *inputPayload.SecretBackendTimeout > 0 {
-		timeout = time.Duration(*inputPayload.SecretBackendTimeout) * time.Second
-	}
-
 	secretOutputs := make(map[string]secret.Output, 0)
 	for _, secretString := range inputPayload.Secrets {
-		ctx, cancel := context.WithTimeout(context.Background(), timeout)
-		secretOutputs[secretString] = backend.GetSecretOutput(ctx, secretString)
-		cancel()
+		secretOutputs[secretString] = backend.GetSecretOutput(secretString)
 	}
 
 	output, err := json.Marshal(secretOutputs)
