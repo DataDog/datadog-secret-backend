@@ -1,5 +1,10 @@
 # CHANGELOG - datadog-secret-backend
 
+## 0.3.1 / incoming
+
+* Bump github.com/hashicorp/vault to `1.21.0`
+* Bump Golang version used to 1.25.1
+
 ## 0.3.0 / 2025-08-05
 
 * Adding support for version 2 of the Hashicorp Secrets Engine.
