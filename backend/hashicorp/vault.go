@@ -98,14 +98,14 @@ func NewVaultBackend(backendID string, bc map[string]interface{}) (*VaultBackend
 		if authInfo == nil {
 			log.Error().Err(err).Str("backend_id", backendID).
 				Msg("No auth info returned")
-			return nil, errors.New("No auth info returned")
+			return nil, errors.New("no auth info returned")
 		}
 	} else if backendConfig.VaultToken != "" {
 		client.SetToken(backendConfig.VaultToken)
 	} else {
 		log.Error().Str("backend_id", backendID).
 			Msg("No auth method or token provided")
-		return nil, errors.New("No auth method or token provided")
+		return nil, errors.New("no auth method or token provided")
 	}
 
 	// KV version detection:
@@ -150,7 +150,7 @@ func NewVaultBackend(backendID string, bc map[string]interface{}) (*VaultBackend
 		if dataMap == nil {
 			log.Error().Str("backend_id", backendID).
 				Msg("Secret data is nil")
-			return nil, errors.New("There is no actual data in the secret")
+			return nil, errors.New("there is no actual data in the secret")
 		}
 
 		for _, item := range backendConfig.Secrets {
@@ -160,7 +160,7 @@ func NewVaultBackend(backendID string, bc map[string]interface{}) (*VaultBackend
 				} else {
 					log.Error().Str("backend_id", backendID).
 						Str("key", item).Msg("Secret value is not a string")
-					return nil, errors.New("Secret value is not a string")
+					return nil, errors.New("secret value is not a string")
 				}
 			}
 		}
