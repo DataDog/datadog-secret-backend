@@ -1,9 +1,14 @@
 # CHANGELOG - datadog-secret-backend
 
-## 0.3.1 / incoming
+## 0.3.1 / 2025-11-25
 
+* Bump Golang version used to `1.25.1`
 * Bump github.com/hashicorp/vault to `1.21.0`
-* Bump Golang version used to 1.25.1
+* Bump github.com/hashicorp/vault/api to `v1.22.0`
+* Bump github.com/aws/aws-sdk-go-v2 to `v1.38.1`
+* Bump github.com/aws/aws-sdk-go-v2/config to `v1.29.15`
+* Bump github.com/aws/aws-sdk-go-v2/credentials to `v1.17.68`
+* Bump github.com/aws/aws-sdk-go-v2/service/sts to `v1.33.20`
 
 ## 0.3.0 / 2025-08-05
 
