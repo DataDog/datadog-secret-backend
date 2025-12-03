@@ -87,6 +87,11 @@ func (b *SecretsBackend) GetSecretOutput(ctx context.Context, secretString strin
 
 	namespace, secretName := pathParts[0], pathParts[1]
 
+	if namespace == "" || secretName == "" || secretKey == "" {
+		es := "namespace, secret name, and key cannot be empty"
+		return secret.Output{Value: nil, Error: &es}
+	}
+
 	k8sSecret, err := b.Client.CoreV1().Secrets(namespace).Get(ctx, secretName, metav1.GetOptions{})
 	if err != nil {
 		es := fmt.Sprintf("failed to get secret '%s' in namespace '%s': %s", secretName, namespace, err.Error())
