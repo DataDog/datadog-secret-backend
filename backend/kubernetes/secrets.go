@@ -23,9 +23,7 @@ import (
 
 // SecretsBackendConfig is the configuration for a Kubernetes Secrets backend
 type SecretsBackendConfig struct {
-	Namespace  string `mapstructure:"namespace"`
-	Context    string `mapstructure:"context"`
-	Kubeconfig string `mapstructure:"kubeconfig"`
+	Kubeconfig string `mapstructure:"kubeconfig"` // optional
 }
 
 // SecretsBackend represents backend for Kubernetes Secrets
@@ -36,9 +34,7 @@ type SecretsBackend struct {
 
 // NewSecretsBackend returns a new Kubernetes Secrets backend
 func NewSecretsBackend(bc map[string]interface{}) (*SecretsBackend, error) {
-	backendConfig := SecretsBackendConfig{
-		Namespace: "default",
-	}
+	backendConfig := SecretsBackendConfig{}
 	err := mapstructure.Decode(bc, &backendConfig)
 	if err != nil {
 		return nil, fmt.Errorf("failed to map backend configuration: %s", err)
@@ -72,12 +68,24 @@ func NewSecretsBackend(bc map[string]interface{}) (*SecretsBackend, error) {
 
 // GetSecretOutput retrieves a secret from Kubernetes Secrets
 func (b *SecretsBackend) GetSecretOutput(ctx context.Context, secretString string) secret.Output {
-	// parse: secret;key
-	// ex: secret;key
+	// parse: namespace/secret-name;key
+	// ex: secrets-store-1/my-secret;password
 
 	parts := strings.SplitN(secretString, ";", 2)
-	secretName, secretKey := parts[0], parts[1]
-	namespace := b.Config.Namespace
+	if len(parts) != 2 {
+		es := "invalid secret format, expected 'namespace/secret-name;key'"
+		return secret.Output{Value: nil, Error: &es}
+	}
+
+	secretPath, secretKey := parts[0], parts[1]
+
+	pathParts := strings.SplitN(secretPath, "/", 2)
+	if len(pathParts) != 2 {
+		es := "invalid secret format, expected 'namespace/secret-name;key'"
+		return secret.Output{Value: nil, Error: &es}
+	}
+
+	namespace, secretName := pathParts[0], pathParts[1]
 
 	k8sSecret, err := b.Client.CoreV1().Secrets(namespace).Get(ctx, secretName, metav1.GetOptions{})
 	if err != nil {
