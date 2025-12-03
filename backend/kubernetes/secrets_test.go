@@ -133,7 +133,7 @@ func TestGetSecretOutput(t *testing.T) {
 			name:          "key not found in secret",
 			secretString:  "secrets-x/my-secrets;nonexistent",
 			expectError:   true,
-			errorContains: "key 'nonexistent' not found",
+			errorContains: "backend does not provide secret key",
 		},
 	}
 
@@ -199,7 +199,7 @@ func TestGetSecretOutputEdgeCases(t *testing.T) {
 			name:          "multiple semicolons",
 			secretString:  "secrets-x/my-secrets;password;extra",
 			expectError:   true,
-			errorContains: "key 'password;extra' not found",
+			errorContains: "backend does not provide secret key",
 		},
 		{
 			name:          "multiple slashes",

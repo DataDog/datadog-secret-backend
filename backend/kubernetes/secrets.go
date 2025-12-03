@@ -180,7 +180,7 @@ func (b *SecretsBackend) GetSecretOutput(ctx context.Context, secretString strin
 
 	encoded, ok := k8sSecret.Data[secretKey]
 	if !ok {
-		es := fmt.Sprintf("key '%s' not found in secret '%s' in namespace '%s'", secretKey, secretName, namespace)
+		es := secret.ErrKeyNotFound.Error()
 		return secret.Output{Value: nil, Error: &es}
 	}
 
