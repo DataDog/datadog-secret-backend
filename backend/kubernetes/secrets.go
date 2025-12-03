@@ -4,32 +4,56 @@
 // Copyright 2024-present Datadog, Inc.
 // Copyright (c) 2021, RapDev.IO
 
-// Package kubernetes allows to fetch secrets from Kubernetes Secrets API
+// Package kubernetesrest allows to fetch secrets from Kubernetes Secrets API using REST
 package kubernetes
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
+	"os"
 	"strings"
 
 	"github.com/mitchellh/mapstructure"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/clientcmd"
 
 	"github.com/DataDog/datadog-secret-backend/secret"
 )
 
 // SecretsBackendConfig is the configuration for a Kubernetes Secrets backend
-type SecretsBackendConfig struct {
-	Kubeconfig string `mapstructure:"kubeconfig"` // optional
+type SecretsBackendConfig struct{}
+
+// k8sConfig holds the Kubernetes connection configuration
+type k8sConfig struct {
+	Host        string
+	BearerToken string
+	CA          []byte
+}
+
+// k8sSecretResponse represents the JSON response from K8s API
+type k8sSecretResponse struct {
+	Data map[string]string `json:"data"`
+}
+
+// k8sErrorResponse represents a simplified expected error responses from K8s API Status object (not-guaranteed)
+type k8sErrorResponse struct {
+	Kind       string `json:"kind"`
+	APIVersion string `json:"apiVersion"`
+	Status     string `json:"status"`
+	Message    string `json:"message"`
+	Reason     string `json:"reason"`
+	Code       int    `json:"code"`
 }
 
 // SecretsBackend represents backend for Kubernetes Secrets
 type SecretsBackend struct {
-	Config SecretsBackendConfig
-	Client kubernetes.Interface
+	Config     SecretsBackendConfig
+	HTTPClient *http.Client
+	K8sConfig  k8sConfig
 }
 
 // NewSecretsBackend returns a new Kubernetes Secrets backend
@@ -40,28 +64,44 @@ func NewSecretsBackend(bc map[string]interface{}) (*SecretsBackend, error) {
 		return nil, fmt.Errorf("failed to map backend configuration: %s", err)
 	}
 
-	var restConfig *rest.Config
-
-	if backendConfig.Kubeconfig != "" {
-		restConfig, err = clientcmd.BuildConfigFromFlags("", backendConfig.Kubeconfig)
-		if err != nil {
-			return nil, fmt.Errorf("failed to load kubeconfig: %w", err)
-		}
-	} else {
-		restConfig, err = rest.InClusterConfig()
-		if err != nil {
-			return nil, fmt.Errorf("failed to create in-cluster config: %w", err)
-		}
+	token, err := os.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/token")
+	if err != nil {
+		return nil, fmt.Errorf("failed to read ServiceAccount token: %w", err)
 	}
 
-	client, err := kubernetes.NewForConfig(restConfig)
+	ca, err := os.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/ca.crt")
 	if err != nil {
-		return nil, fmt.Errorf("failed to create kubernetes client: %w", err)
+		return nil, fmt.Errorf("failed to read CA certificate: %w", err)
+	}
+
+	// get server from environment
+	host := os.Getenv("KUBERNETES_SERVICE_HOST")
+	port := os.Getenv("KUBERNETES_SERVICE_PORT")
+	if host == "" || port == "" {
+		return nil, fmt.Errorf("KUBERNETES_SERVICE_HOST or KUBERNETES_SERVICE_PORT not set")
+	}
+
+	k8sConfig := &k8sConfig{
+		Host:        fmt.Sprintf("https://%s:%s", host, port),
+		BearerToken: string(token),
+		CA:          ca,
+	}
+
+	caCertPool := x509.NewCertPool()
+	if !caCertPool.AppendCertsFromPEM(k8sConfig.CA) {
+		return nil, fmt.Errorf("failed to parse CA certificate")
 	}
 
 	backend := &SecretsBackend{
 		Config: backendConfig,
-		Client: client,
+		HTTPClient: &http.Client{
+			Transport: &http.Transport{
+				TLSClientConfig: &tls.Config{
+					RootCAs: caCertPool,
+				},
+			},
+		},
+		K8sConfig: *k8sConfig,
 	}
 	return backend, nil
 }
@@ -92,9 +132,44 @@ func (b *SecretsBackend) GetSecretOutput(ctx context.Context, secretString strin
 		return secret.Output{Value: nil, Error: &es}
 	}
 
-	k8sSecret, err := b.Client.CoreV1().Secrets(namespace).Get(ctx, secretName, metav1.GetOptions{})
+	// K8s API URL
+	url := fmt.Sprintf("%s/api/v1/namespaces/%s/secrets/%s", b.K8sConfig.Host, namespace, secretName)
+
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+	if err != nil {
+		es := fmt.Sprintf("failed to create request: %s", err.Error())
+		return secret.Output{Value: nil, Error: &es}
+	}
+	req.Header.Set("Authorization", "Bearer "+b.K8sConfig.BearerToken)
+	req.Header.Set("Accept", "application/json")
+
+	resp, err := b.HTTPClient.Do(req)
 	if err != nil {
 		es := fmt.Sprintf("failed to get secret '%s' in namespace '%s': %s", secretName, namespace, err.Error())
+		return secret.Output{Value: nil, Error: &es}
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		es := fmt.Sprintf("failed to read response: %s", err.Error())
+		return secret.Output{Value: nil, Error: &es}
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		var k8sErr k8sErrorResponse
+		if err := json.Unmarshal(body, &k8sErr); err == nil && k8sErr.Message != "" {
+			es := k8sErr.Message
+			return secret.Output{Value: nil, Error: &es}
+		}
+		// fallback error if not an expected status object
+		es := fmt.Sprintf("failed to get secret '%s' in namespace '%s': HTTP %d", secretName, namespace, resp.StatusCode)
+		return secret.Output{Value: nil, Error: &es}
+	}
+
+	var k8sSecret k8sSecretResponse
+	if err := json.Unmarshal(body, &k8sSecret); err != nil {
+		es := fmt.Sprintf("failed to parse secret response: %s", err.Error())
 		return secret.Output{Value: nil, Error: &es}
 	}
 
@@ -103,12 +178,18 @@ func (b *SecretsBackend) GetSecretOutput(ctx context.Context, secretString strin
 		return secret.Output{Value: nil, Error: &es}
 	}
 
-	data, ok := k8sSecret.Data[secretKey]
+	encoded, ok := k8sSecret.Data[secretKey]
 	if !ok {
 		es := fmt.Sprintf("key '%s' not found in secret '%s' in namespace '%s'", secretKey, secretName, namespace)
 		return secret.Output{Value: nil, Error: &es}
 	}
 
-	decoded := string(data)
-	return secret.Output{Value: &decoded, Error: nil}
+	decoded, err := base64.StdEncoding.DecodeString(encoded)
+	if err != nil {
+		es := fmt.Sprintf("failed to decode secret value: %s", err.Error())
+		return secret.Output{Value: nil, Error: &es}
+	}
+
+	value := string(decoded)
+	return secret.Output{Value: &value, Error: nil}
 }

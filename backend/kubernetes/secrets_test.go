@@ -8,39 +8,70 @@ package kubernetes
 
 import (
 	"context"
+	"encoding/base64"
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes/fake"
 )
 
+// createMockK8sServer creates a test HTTP server that mimics K8s API
+func createMockK8sServer() *httptest.Server {
+	return httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		auth := r.Header.Get("Authorization")
+		if auth != "Bearer test-token" {
+			w.WriteHeader(http.StatusUnauthorized)
+			json.NewEncoder(w).Encode(k8sErrorResponse{
+				Message: "Unauthorized",
+				Reason:  "Unauthorized",
+				Code:    401,
+			})
+			return
+		}
+
+		switch r.URL.Path {
+		case "/api/v1/namespaces/secrets-x/secrets/my-secrets":
+			json.NewEncoder(w).Encode(k8sSecretResponse{
+				Data: map[string]string{
+					"password": base64.StdEncoding.EncodeToString([]byte("password")),
+					"username": base64.StdEncoding.EncodeToString([]byte("admin")),
+					"api_key":  base64.StdEncoding.EncodeToString([]byte("key-123")),
+				},
+			})
+		case "/api/v1/namespaces/secrets-y/secrets/db-secrets":
+			json.NewEncoder(w).Encode(k8sSecretResponse{
+				Data: map[string]string{
+					"password": base64.StdEncoding.EncodeToString([]byte("db-password")),
+					"host":     base64.StdEncoding.EncodeToString([]byte("localhost")),
+				},
+			})
+		case "/api/v1/namespaces/test-ns/secrets/empty-secret":
+			json.NewEncoder(w).Encode(k8sSecretResponse{
+				Data: nil,
+			})
+		default:
+			w.WriteHeader(http.StatusNotFound)
+			json.NewEncoder(w).Encode(k8sErrorResponse{
+				Message: `secrets "unknown" not found`,
+				Reason:  "NotFound",
+				Code:    404,
+			})
+		}
+	}))
+}
+
 func TestGetSecretOutput(t *testing.T) {
+	server := createMockK8sServer()
+	defer server.Close()
 
 	backend := &SecretsBackend{
-		Client: fake.NewSimpleClientset(
-			&corev1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "my-secrets",
-					Namespace: "secrets-x",
-				},
-				Data: map[string][]byte{
-					"password": []byte("password"),
-					"username": []byte("admin"),
-				},
-			},
-			&corev1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "db-secrets",
-					Namespace: "secrets-y",
-				},
-				Data: map[string][]byte{
-					"password": []byte("db-password"),
-					"host":     []byte("localhost"),
-				},
-			},
-		),
+		HTTPClient: server.Client(),
+		K8sConfig: k8sConfig{
+			Host:        server.URL,
+			BearerToken: "test-token",
+		},
 	}
 
 	tests := []struct {
@@ -90,13 +121,13 @@ func TestGetSecretOutput(t *testing.T) {
 			name:          "secret not found",
 			secretString:  "secrets-x/nonexistent;password",
 			expectError:   true,
-			errorContains: "failed to get secret",
+			errorContains: "not found",
 		},
 		{
 			name:          "namespace not found",
 			secretString:  "nonexistent-ns/my-secrets;password",
 			expectError:   true,
-			errorContains: "failed to get secret",
+			errorContains: "not found",
 		},
 		{
 			name:          "key not found in secret",
@@ -127,18 +158,15 @@ func TestGetSecretOutput(t *testing.T) {
 }
 
 func TestGetSecretOutputEmptyData(t *testing.T) {
-	fakeClient := fake.NewSimpleClientset(
-		&corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      "empty-secret",
-				Namespace: "test-ns",
-			},
-			Data: nil,
-		},
-	)
+	server := createMockK8sServer()
+	defer server.Close()
 
 	backend := &SecretsBackend{
-		Client: fakeClient,
+		HTTPClient: server.Client(),
+		K8sConfig: k8sConfig{
+			Host:        server.URL,
+			BearerToken: "test-token",
+		},
 	}
 
 	ctx := context.Background()
@@ -150,18 +178,15 @@ func TestGetSecretOutputEmptyData(t *testing.T) {
 }
 
 func TestGetSecretOutputEdgeCases(t *testing.T) {
+	server := createMockK8sServer()
+	defer server.Close()
+
 	backend := &SecretsBackend{
-		Client: fake.NewSimpleClientset(
-			&corev1.Secret{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "my-secrets",
-					Namespace: "secrets-x",
-				},
-				Data: map[string][]byte{
-					"password": []byte("password"),
-				},
-			},
-		),
+		HTTPClient: server.Client(),
+		K8sConfig: k8sConfig{
+			Host:        server.URL,
+			BearerToken: "test-token",
+		},
 	}
 
 	tests := []struct {
@@ -180,13 +205,13 @@ func TestGetSecretOutputEdgeCases(t *testing.T) {
 			name:          "multiple slashes",
 			secretString:  "secrets-x/sub/path;password",
 			expectError:   true,
-			errorContains: "failed to get secret 'sub/path'",
+			errorContains: "not found",
 		},
 		{
 			name:          "double slash",
 			secretString:  "secrets-x//my-secrets;password",
 			expectError:   true,
-			errorContains: "failed to get secret",
+			errorContains: "not found",
 		},
 		{
 			name:          "empty secret name after slash",
