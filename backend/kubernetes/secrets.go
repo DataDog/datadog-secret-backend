@@ -29,7 +29,7 @@ type SecretsBackendConfig struct {
 // SecretsBackend represents backend for Kubernetes Secrets
 type SecretsBackend struct {
 	Config SecretsBackendConfig
-	Client *kubernetes.Clientset
+	Client kubernetes.Interface
 }
 
 // NewSecretsBackend returns a new Kubernetes Secrets backend
@@ -90,6 +90,11 @@ func (b *SecretsBackend) GetSecretOutput(ctx context.Context, secretString strin
 	k8sSecret, err := b.Client.CoreV1().Secrets(namespace).Get(ctx, secretName, metav1.GetOptions{})
 	if err != nil {
 		es := fmt.Sprintf("failed to get secret '%s' in namespace '%s': %s", secretName, namespace, err.Error())
+		return secret.Output{Value: nil, Error: &es}
+	}
+
+	if k8sSecret.Data == nil {
+		es := fmt.Sprintf("secret '%s' in namespace '%s' has no data", secretName, namespace)
 		return secret.Output{Value: nil, Error: &es}
 	}
 
