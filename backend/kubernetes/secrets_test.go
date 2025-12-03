@@ -23,7 +23,7 @@ func createMockK8sServer() *httptest.Server {
 		auth := r.Header.Get("Authorization")
 		if auth != "Bearer test-token" {
 			w.WriteHeader(http.StatusUnauthorized)
-			json.NewEncoder(w).Encode(k8sErrorResponse{
+			_ = json.NewEncoder(w).Encode(k8sErrorResponse{
 				Message: "Unauthorized",
 				Reason:  "Unauthorized",
 				Code:    401,
@@ -33,7 +33,7 @@ func createMockK8sServer() *httptest.Server {
 
 		switch r.URL.Path {
 		case "/api/v1/namespaces/secrets-x/secrets/my-secrets":
-			json.NewEncoder(w).Encode(k8sSecretResponse{
+			_ = json.NewEncoder(w).Encode(k8sSecretResponse{
 				Data: map[string]string{
 					"password": base64.StdEncoding.EncodeToString([]byte("password")),
 					"username": base64.StdEncoding.EncodeToString([]byte("admin")),
@@ -41,19 +41,19 @@ func createMockK8sServer() *httptest.Server {
 				},
 			})
 		case "/api/v1/namespaces/secrets-y/secrets/db-secrets":
-			json.NewEncoder(w).Encode(k8sSecretResponse{
+			_ = json.NewEncoder(w).Encode(k8sSecretResponse{
 				Data: map[string]string{
 					"password": base64.StdEncoding.EncodeToString([]byte("db-password")),
 					"host":     base64.StdEncoding.EncodeToString([]byte("localhost")),
 				},
 			})
 		case "/api/v1/namespaces/test-ns/secrets/empty-secret":
-			json.NewEncoder(w).Encode(k8sSecretResponse{
+			_ = json.NewEncoder(w).Encode(k8sSecretResponse{
 				Data: nil,
 			})
 		default:
 			w.WriteHeader(http.StatusNotFound)
-			json.NewEncoder(w).Encode(k8sErrorResponse{
+			_ = json.NewEncoder(w).Encode(k8sErrorResponse{
 				Message: `secrets "unknown" not found`,
 				Reason:  "NotFound",
 				Code:    404,

@@ -4,7 +4,7 @@
 // Copyright 2024-present Datadog, Inc.
 // Copyright (c) 2021, RapDev.IO
 
-// Package kubernetesrest allows to fetch secrets from Kubernetes Secrets API using REST
+// Package kubernetes allows to fetch secrets from Kubernetes Secrets API using REST.
 package kubernetes
 
 import (
