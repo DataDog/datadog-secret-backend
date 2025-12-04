@@ -27,6 +27,7 @@ import (
 type SecretsBackendConfig struct {
 	TokenPath string `mapstructure:"token_path"` // optional
 	CAPath    string `mapstructure:"ca_path"`    // optional
+	APIServer string `mapstructure:"api_server"` // optional
 }
 
 // k8sConfig holds the Kubernetes connection configuration
@@ -97,14 +98,18 @@ func NewSecretsBackend(bc map[string]interface{}) (*SecretsBackend, error) {
 		return nil, fmt.Errorf("failed to read CA certificate: %w", err)
 	}
 
-	host := os.Getenv("KUBERNETES_SERVICE_HOST")
-	port := os.Getenv("KUBERNETES_SERVICE_PORT")
-	if host == "" || port == "" {
-		return nil, fmt.Errorf("KUBERNETES_SERVICE_HOST or KUBERNETES_SERVICE_PORT not set")
+	apiServer := backendConfig.APIServer
+	if apiServer == "" {
+		host := os.Getenv("KUBERNETES_SERVICE_HOST")
+		port := os.Getenv("KUBERNETES_SERVICE_PORT")
+		if host == "" || port == "" {
+			return nil, fmt.Errorf("KUBERNETES_SERVICE_HOST or KUBERNETES_SERVICE_PORT not set")
+		}
+		apiServer = fmt.Sprintf("https://%s:%s", host, port)
 	}
 
 	k8sConfig := &k8sConfig{
-		Host:        fmt.Sprintf("https://%s:%s", host, port),
+		Host:        apiServer,
 		BearerToken: string(token),
 		CA:          ca,
 	}
