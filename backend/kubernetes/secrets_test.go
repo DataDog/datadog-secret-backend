@@ -8,12 +8,22 @@ package kubernetes
 
 import (
 	"context"
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/x509"
+	"crypto/x509/pkix"
 	"encoding/json"
+	"encoding/pem"
+	"math/big"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // createMockK8sServer creates a test HTTP server that mimics K8s API
@@ -247,6 +257,113 @@ func TestGetSecretOutputEdgeCases(t *testing.T) {
 			assert.Nil(t, output.Value)
 			if tt.errorContains != "" {
 				assert.Contains(t, *output.Error, tt.errorContains)
+			}
+		})
+	}
+}
+
+func certify() ([]byte, error) {
+	priv, _ := rsa.GenerateKey(rand.Reader, 2048)
+	template := x509.Certificate{
+		SerialNumber: big.NewInt(1),
+		Subject: pkix.Name{
+			CommonName: "test-ca",
+		},
+		NotBefore:             time.Now(),
+		NotAfter:              time.Now().Add(24 * time.Hour),
+		KeyUsage:              x509.KeyUsageCertSign,
+		BasicConstraintsValid: true,
+		IsCA:                  true,
+	}
+	cert, _ := x509.CreateCertificate(rand.Reader, &template, &template, &priv.PublicKey, priv)
+	certPEM := pem.EncodeToMemory(&pem.Block{
+		Type:  "CERTIFICATE",
+		Bytes: cert,
+	})
+
+	return certPEM, nil
+}
+
+// TestNewSecretsBackendConfigOptions tests configuration options
+func TestNewSecretsBackendConfigOptions(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	tokenPath := filepath.Join(tmpDir, "token")
+	caPath := filepath.Join(tmpDir, "ca.crt")
+
+	testToken := "test-service-account-token"
+	testCA, err := certify()
+	require.NoError(t, err)
+
+	err = os.WriteFile(tokenPath, []byte(testToken), 0600)
+	require.NoError(t, err)
+	err = os.WriteFile(caPath, testCA, 0600)
+	require.NoError(t, err)
+
+	os.Setenv("KUBERNETES_SERVICE_HOST", "kubernetes.default.svc")
+	os.Setenv("KUBERNETES_SERVICE_PORT", "443")
+	defer os.Unsetenv("KUBERNETES_SERVICE_HOST")
+	defer os.Unsetenv("KUBERNETES_SERVICE_PORT")
+
+	tests := []struct {
+		name        string
+		config      map[string]interface{}
+		expectError bool
+		validate    func(*testing.T, *SecretsBackend)
+	}{
+		{
+			name: "default paths with env vars",
+			config: map[string]interface{}{
+				"token_path": tokenPath,
+				"ca_path":    caPath,
+			},
+			expectError: false,
+			validate: func(t *testing.T, backend *SecretsBackend) {
+				assert.Equal(t, "https://kubernetes.default.svc:443", backend.K8sConfig.Host)
+				assert.Equal(t, testToken, backend.K8sConfig.BearerToken)
+				assert.Equal(t, testCA, backend.K8sConfig.CA)
+			},
+		},
+		{
+			name: "custom api_server override",
+			config: map[string]interface{}{
+				"token_path": tokenPath,
+				"ca_path":    caPath,
+				"api_server": "https://custom-api.example.com:6443",
+			},
+			expectError: false,
+			validate: func(t *testing.T, backend *SecretsBackend) {
+				assert.Equal(t, "https://custom-api.example.com:6443", backend.K8sConfig.Host)
+				assert.Equal(t, testToken, backend.K8sConfig.BearerToken)
+			},
+		},
+		{
+			name: "all custom paths",
+			config: map[string]interface{}{
+				"token_path": tokenPath,
+				"ca_path":    caPath,
+				"api_server": "https://192.168.1.1:8443",
+			},
+			expectError: false,
+			validate: func(t *testing.T, backend *SecretsBackend) {
+				assert.Equal(t, "https://192.168.1.1:8443", backend.K8sConfig.Host)
+				assert.NotNil(t, backend.HTTPClient)
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			backend, err := NewSecretsBackend(tt.config)
+			if tt.expectError {
+				assert.Error(t, err)
+				assert.Nil(t, backend)
+			} else {
+				assert.NoError(t, err)
+				assert.NotNil(t, backend)
+				if tt.validate != nil && backend != nil {
+					tt.validate(t, backend)
+				}
 			}
 		})
 	}
