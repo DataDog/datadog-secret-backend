@@ -8,7 +8,6 @@ package kubernetes
 
 import (
 	"context"
-	"encoding/base64"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -23,7 +22,7 @@ func createMockK8sServer() *httptest.Server {
 		auth := r.Header.Get("Authorization")
 		if auth != "Bearer test-token" {
 			w.WriteHeader(http.StatusUnauthorized)
-			_ = json.NewEncoder(w).Encode(k8sErrorResponse{
+			_ = json.NewEncoder(w).Encode(k8sStatusResponse{
 				Message: "Unauthorized",
 				Reason:  "Unauthorized",
 				Code:    401,
@@ -34,17 +33,17 @@ func createMockK8sServer() *httptest.Server {
 		switch r.URL.Path {
 		case "/api/v1/namespaces/secrets-x/secrets/my-secrets":
 			_ = json.NewEncoder(w).Encode(k8sSecretResponse{
-				Data: map[string]string{
-					"password": base64.StdEncoding.EncodeToString([]byte("password")),
-					"username": base64.StdEncoding.EncodeToString([]byte("admin")),
-					"api_key":  base64.StdEncoding.EncodeToString([]byte("key-123")),
+				Data: map[string][]byte{
+					"password": []byte("password"),
+					"username": []byte("admin"),
+					"api_key":  []byte("key-123"),
 				},
 			})
 		case "/api/v1/namespaces/secrets-y/secrets/db-secrets":
 			_ = json.NewEncoder(w).Encode(k8sSecretResponse{
-				Data: map[string]string{
-					"password": base64.StdEncoding.EncodeToString([]byte("db-password")),
-					"host":     base64.StdEncoding.EncodeToString([]byte("localhost")),
+				Data: map[string][]byte{
+					"password": []byte("db-password"),
+					"host":     []byte("localhost"),
 				},
 			})
 		case "/api/v1/namespaces/test-ns/secrets/empty-secret":
@@ -53,7 +52,7 @@ func createMockK8sServer() *httptest.Server {
 			})
 		default:
 			w.WriteHeader(http.StatusNotFound)
-			_ = json.NewEncoder(w).Encode(k8sErrorResponse{
+			_ = json.NewEncoder(w).Encode(k8sStatusResponse{
 				Message: `secrets "unknown" not found`,
 				Reason:  "NotFound",
 				Code:    404,
