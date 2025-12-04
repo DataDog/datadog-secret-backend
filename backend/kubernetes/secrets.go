@@ -24,7 +24,10 @@ import (
 )
 
 // SecretsBackendConfig is the configuration for a Kubernetes Secrets backend
-type SecretsBackendConfig struct{}
+type SecretsBackendConfig struct {
+	TokenPath string `mapstructure:"token_path"` // optional
+	CAPath    string `mapstructure:"ca_path"`    // optional
+}
 
 // k8sConfig holds the Kubernetes connection configuration
 type k8sConfig struct {
@@ -74,12 +77,22 @@ func NewSecretsBackend(bc map[string]interface{}) (*SecretsBackend, error) {
 		return nil, fmt.Errorf("failed to map backend configuration: %s", err)
 	}
 
-	token, err := os.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/token")
+	tokenPath := backendConfig.TokenPath
+	if tokenPath == "" {
+		tokenPath = "/var/run/secrets/kubernetes.io/serviceaccount/token"
+	}
+
+	caPath := backendConfig.CAPath
+	if caPath == "" {
+		caPath = "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
+	}
+
+	token, err := os.ReadFile(tokenPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read ServiceAccount token: %w", err)
 	}
 
-	ca, err := os.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/ca.crt")
+	ca, err := os.ReadFile(caPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read CA certificate: %w", err)
 	}
