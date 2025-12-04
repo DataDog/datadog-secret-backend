@@ -11,7 +11,6 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -35,18 +34,27 @@ type k8sConfig struct {
 }
 
 // k8sSecretResponse represents the JSON response from K8s API
+// https://kubernetes.io/docs/reference/kubernetes-api/config-and-storage-resources/secret-v1/#Secret
 type k8sSecretResponse struct {
-	Data map[string]string `json:"data"`
+	Kind       string                 `json:"kind"`
+	APIVersion string                 `json:"apiVersion"`
+	Metadata   map[string]interface{} `json:"metadata"`
+	Data       map[string][]byte      `json:"data"`
+	Immutable  *bool                  `json:"immutable,omitempty"`
+	Type       string                 `json:"type,omitempty"`
 }
 
 // k8sErrorResponse represents a simplified expected error responses from K8s API Status object (not-guaranteed)
-type k8sErrorResponse struct {
-	Kind       string `json:"kind"`
-	APIVersion string `json:"apiVersion"`
-	Status     string `json:"status"`
-	Message    string `json:"message"`
-	Reason     string `json:"reason"`
-	Code       int    `json:"code"`
+// https://kubernetes.io/docs/reference/kubernetes-api/common-definitions/status/
+type k8sStatusResponse struct {
+	Kind       string                 `json:"kind"`
+	APIVersion string                 `json:"apiVersion"`
+	Status     string                 `json:"status"`
+	Message    string                 `json:"message"`
+	Reason     string                 `json:"reason"`
+	Code       int32                  `json:"code"`
+	Metadata   map[string]interface{} `json:"metadata,omitempty"`
+	Details    map[string]interface{} `json:"details,omitempty"`
 }
 
 // SecretsBackend represents backend for Kubernetes Secrets
@@ -57,6 +65,8 @@ type SecretsBackend struct {
 }
 
 // NewSecretsBackend returns a new Kubernetes Secrets backend
+// https://kubernetes.io/docs/tasks/run-application/access-api-from-pod/#directly-accessing-the-rest-api
+// https://github.com/kubernetes/client-go/blob/master/rest/config.go#L543
 func NewSecretsBackend(bc map[string]interface{}) (*SecretsBackend, error) {
 	backendConfig := SecretsBackendConfig{}
 	err := mapstructure.Decode(bc, &backendConfig)
@@ -74,7 +84,6 @@ func NewSecretsBackend(bc map[string]interface{}) (*SecretsBackend, error) {
 		return nil, fmt.Errorf("failed to read CA certificate: %w", err)
 	}
 
-	// get server from environment
 	host := os.Getenv("KUBERNETES_SERVICE_HOST")
 	port := os.Getenv("KUBERNETES_SERVICE_PORT")
 	if host == "" || port == "" {
@@ -132,7 +141,7 @@ func (b *SecretsBackend) GetSecretOutput(ctx context.Context, secretString strin
 		return secret.Output{Value: nil, Error: &es}
 	}
 
-	// K8s API URL
+	// https://kubernetes.io/docs/reference/kubernetes-api/config-and-storage-resources/secret-v1/
 	url := fmt.Sprintf("%s/api/v1/namespaces/%s/secrets/%s", b.K8sConfig.Host, namespace, secretName)
 
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
@@ -157,7 +166,7 @@ func (b *SecretsBackend) GetSecretOutput(ctx context.Context, secretString strin
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		var k8sErr k8sErrorResponse
+		var k8sErr k8sStatusResponse
 		if err := json.Unmarshal(body, &k8sErr); err == nil && k8sErr.Message != "" {
 			es := k8sErr.Message
 			return secret.Output{Value: nil, Error: &es}
@@ -178,18 +187,12 @@ func (b *SecretsBackend) GetSecretOutput(ctx context.Context, secretString strin
 		return secret.Output{Value: nil, Error: &es}
 	}
 
-	encoded, ok := k8sSecret.Data[secretKey]
+	secretValue, ok := k8sSecret.Data[secretKey]
 	if !ok {
 		es := secret.ErrKeyNotFound.Error()
 		return secret.Output{Value: nil, Error: &es}
 	}
 
-	decoded, err := base64.StdEncoding.DecodeString(encoded)
-	if err != nil {
-		es := fmt.Sprintf("failed to decode secret value: %s", err.Error())
-		return secret.Output{Value: nil, Error: &es}
-	}
-
-	value := string(decoded)
+	value := string(secretValue)
 	return secret.Output{Value: &value, Error: nil}
 }
