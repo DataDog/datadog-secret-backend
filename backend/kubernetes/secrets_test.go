@@ -302,8 +302,10 @@ func TestNewSecretsBackendConfigOptions(t *testing.T) {
 
 	os.Setenv("KUBERNETES_SERVICE_HOST", "kubernetes.default.svc")
 	os.Setenv("KUBERNETES_SERVICE_PORT", "443")
-	defer os.Unsetenv("KUBERNETES_SERVICE_HOST")
-	defer os.Unsetenv("KUBERNETES_SERVICE_PORT")
+	t.Cleanup(func() {
+		require.NoError(t, os.Unsetenv("KUBERNETES_SERVICE_HOST"))
+		require.NoError(t, os.Unsetenv("KUBERNETES_SERVICE_PORT"))
+	})
 
 	tests := []struct {
 		name        string
