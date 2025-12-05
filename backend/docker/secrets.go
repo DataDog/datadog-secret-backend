@@ -56,10 +56,7 @@ func NewSecretsBackend(bc map[string]interface{}) (*SecretsBackend, error) {
 		return nil, fmt.Errorf("secrets path '%s' is not a directory", backendConfig.SecretsPath)
 	}
 
-	backend := &SecretsBackend{
-		Config: backendConfig,
-	}
-	return backend, nil
+	return &SecretsBackend{Config: backendConfig}, nil
 }
 
 // GetSecretOutput retrieves a secret from Docker Secrets
