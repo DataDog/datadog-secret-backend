@@ -18,9 +18,12 @@ import (
 func TestGetSecretOutput(t *testing.T) {
 	tmpDir := t.TempDir()
 
-	os.WriteFile(filepath.Join(tmpDir, "api_key"), []byte("api-key"), 0644)
-	os.WriteFile(filepath.Join(tmpDir, "app_key"), []byte("app-key"), 0644)
-	os.WriteFile(filepath.Join(tmpDir, "empty"), []byte(""), 0644)
+	err := os.WriteFile(filepath.Join(tmpDir, "api_key"), []byte("api-key"), 0644)
+	assert.NoError(t, err)
+	err = os.WriteFile(filepath.Join(tmpDir, "app_key"), []byte("app-key"), 0644)
+	assert.NoError(t, err)
+	err = os.WriteFile(filepath.Join(tmpDir, "empty"), []byte(""), 0644)
+	assert.NoError(t, err)
 
 	backend := &SecretsBackend{
 		Config: SecretsBackendConfig{
