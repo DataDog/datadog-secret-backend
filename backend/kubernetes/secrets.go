@@ -16,6 +16,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"runtime"
 	"strings"
 
 	"github.com/mitchellh/mapstructure"
@@ -80,12 +81,22 @@ func NewSecretsBackend(bc map[string]interface{}) (*SecretsBackend, error) {
 
 	tokenPath := backendConfig.TokenPath
 	if tokenPath == "" {
-		tokenPath = "/var/run/secrets/kubernetes.io/serviceaccount/token"
+		// https://kubernetes.io/docs/concepts/windows/intro/#api
+		if runtime.GOOS == "windows" {
+			tokenPath = `C:\var\run\secrets\kubernetes.io\serviceaccount\token`
+		} else {
+			tokenPath = "/var/run/secrets/kubernetes.io/serviceaccount/token"
+		}
 	}
 
 	caPath := backendConfig.CAPath
 	if caPath == "" {
-		caPath = "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
+		// https://kubernetes.io/docs/concepts/windows/intro/#api
+		if runtime.GOOS == "windows" {
+			caPath = `C:\var\run\secrets\kubernetes.io\serviceaccount\ca.crt`
+		} else {
+			caPath = "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
+		}
 	}
 
 	token, err := os.ReadFile(tokenPath)
