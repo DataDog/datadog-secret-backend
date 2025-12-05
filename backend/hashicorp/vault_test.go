@@ -781,3 +781,107 @@ func TestVaultBackend_ErrorHandling(t *testing.T) {
 		})
 	}
 }
+
+func TestNewAuthenticationFromBackendConfig_ImplicitAuth(t *testing.T) {
+	client, err := api.NewClient(api.DefaultConfig())
+	require.NoError(t, err)
+
+	tests := map[string]struct {
+		sessionConfig VaultSessionBackendConfig
+		envValue      string
+	}{
+		"implicit auth from config set to 'true'": {
+			sessionConfig: VaultSessionBackendConfig{
+				VaultAuthType:       "kubernetes",
+				VaultKubernetesRole: "test-role",
+				ImplicitAuth:        "true",
+			},
+		},
+		"implicit auth from config set to 'TRUE'": {
+			sessionConfig: VaultSessionBackendConfig{
+				VaultAuthType:       "kubernetes",
+				VaultKubernetesRole: "test-role",
+				ImplicitAuth:        "TRUE",
+			},
+		},
+		"implicit auth from config set to 't'": {
+			sessionConfig: VaultSessionBackendConfig{
+				VaultAuthType:       "kubernetes",
+				VaultKubernetesRole: "test-role",
+				ImplicitAuth:        "t",
+			},
+		},
+		"implicit auth from config set to 'T'": {
+			sessionConfig: VaultSessionBackendConfig{
+				VaultAuthType:       "kubernetes",
+				VaultKubernetesRole: "test-role",
+				ImplicitAuth:        "T",
+			},
+		},
+		"implicit auth from config set to '1'": {
+			sessionConfig: VaultSessionBackendConfig{
+				VaultAuthType:       "kubernetes",
+				VaultKubernetesRole: "test-role",
+				ImplicitAuth:        "1",
+			},
+		},
+		"implicit auth from env set to 'true'": {
+			sessionConfig: VaultSessionBackendConfig{
+				VaultAuthType:       "kubernetes",
+				VaultKubernetesRole: "test-role",
+			},
+			envValue: "true",
+		},
+		"implicit auth from env set to 'TRUE'": {
+			sessionConfig: VaultSessionBackendConfig{
+				VaultAuthType:       "kubernetes",
+				VaultKubernetesRole: "test-role",
+			},
+			envValue: "TRUE",
+		},
+		"implicit auth from env set to 't'": {
+			sessionConfig: VaultSessionBackendConfig{
+				VaultAuthType:       "kubernetes",
+				VaultKubernetesRole: "test-role",
+			},
+			envValue: "t",
+		},
+		"implicit auth from env set to 'T'": {
+			sessionConfig: VaultSessionBackendConfig{
+				VaultAuthType:       "kubernetes",
+				VaultKubernetesRole: "test-role",
+			},
+			envValue: "T",
+		},
+		"implicit auth from env set to '1'": {
+			sessionConfig: VaultSessionBackendConfig{
+				VaultAuthType:       "kubernetes",
+				VaultKubernetesRole: "test-role",
+			},
+			envValue: "1",
+		},
+		"env var takes precedence over config": {
+			sessionConfig: VaultSessionBackendConfig{
+				VaultAuthType:       "kubernetes",
+				VaultKubernetesRole: "test-role",
+				ImplicitAuth:        "false",
+			},
+			envValue: "true",
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			if tt.envValue != "" {
+				t.Setenv("DD_SECRETS_IMPLICIT_AUTH", tt.envValue)
+			}
+
+			backendConfig := VaultBackendConfig{VaultSession: tt.sessionConfig}
+			auth, token, err := newAuthenticationFromBackendConfig(backendConfig, client)
+
+			assert.NoError(t, err)
+			assert.Nil(t, auth)
+			assert.Equal(t, "implicit auth being used", token)
+		})
+	}
+}

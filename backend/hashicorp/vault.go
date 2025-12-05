@@ -11,6 +11,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"slices"
 	"strings"
 	"time"
 
@@ -39,6 +40,7 @@ type VaultSessionBackendConfig struct {
 	VaultKubernetesJWT       string `mapstructure:"vault_kubernetes_jwt"`
 	VaultKubernetesJWTPath   string `mapstructure:"vault_kubernetes_jwt_path"`
 	VaultKubernetesMountPath string `mapstructure:"vault_kubernetes_mount_path"`
+	ImplicitAuth             string `mapstructure:"implicit_auth"`
 }
 
 // VaultBackendConfig contains the configuration to connect to Hashicorp vault backend
@@ -91,6 +93,15 @@ func newAuthenticationFromBackendConfig(bc VaultBackendConfig, client *api.Clien
 	sessionConfig := bc.VaultSession
 	var auth api.AuthMethod
 	var err error
+
+	implicitAuthRaw := os.Getenv("DD_SECRETS_IMPLICIT_AUTH")
+	if implicitAuthRaw == "" {
+		implicitAuthRaw = sessionConfig.ImplicitAuth
+	}
+	if slices.Contains([]string{"true", "t", "1"}, strings.ToLower(implicitAuthRaw)) {
+		// Skip authentication when implicit auth is enabled
+		return nil, "implicit auth being used", nil
+	}
 
 	if sessionConfig.VaultRoleID != "" && sessionConfig.VaultSecretID != "" {
 		secretID := &approle.SecretID{FromString: sessionConfig.VaultSecretID}
@@ -234,7 +245,7 @@ func NewVaultBackend(bc map[string]interface{}) (*VaultBackend, error) {
 		client.SetToken(authToken)
 	} else if backendConfig.VaultToken != "" {
 		client.SetToken(backendConfig.VaultToken)
-	} else {
+	} else if authToken != "implicit auth being used" {
 		return nil, fmt.Errorf("no auth method or token provided")
 	}
 
