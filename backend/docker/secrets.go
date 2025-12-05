@@ -63,7 +63,7 @@ func NewSecretsBackend(bc map[string]interface{}) (*SecretsBackend, error) {
 }
 
 // GetSecretOutput retrieves a secret from Docker Secrets
-func (b *SecretsBackend) GetSecretOutput(ctx context.Context, secretString string) secret.Output {
+func (b *SecretsBackend) GetSecretOutput(_ context.Context, secretString string) secret.Output {
 	var path string
 
 	if filepath.IsAbs(secretString) {
