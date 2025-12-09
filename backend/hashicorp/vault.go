@@ -25,6 +25,8 @@ import (
 	"github.com/qri-io/jsonpointer"
 )
 
+const implicitAuthToken = "implicit-auth"
+
 // VaultSessionBackendConfig is the configuration for a Hashicorp vault backend
 type VaultSessionBackendConfig struct {
 	VaultRoleID              string `mapstructure:"vault_role_id"`
@@ -100,7 +102,7 @@ func newAuthenticationFromBackendConfig(bc VaultBackendConfig, client *api.Clien
 	}
 	if slices.Contains([]string{"true", "t", "1"}, strings.ToLower(implicitAuthRaw)) {
 		// Skip authentication when implicit auth is enabled
-		return nil, "implicit auth being used", nil
+		return nil, implicitAuthToken, nil
 	}
 
 	if sessionConfig.VaultRoleID != "" && sessionConfig.VaultSecretID != "" {
@@ -241,12 +243,14 @@ func NewVaultBackend(bc map[string]interface{}) (*VaultBackend, error) {
 		if authInfo == nil {
 			return nil, fmt.Errorf("no auth info returned")
 		}
-	} else if authToken != "" {
-		client.SetToken(authToken)
-	} else if backendConfig.VaultToken != "" {
-		client.SetToken(backendConfig.VaultToken)
-	} else if authToken != "implicit auth being used" {
-		return nil, fmt.Errorf("no auth method or token provided")
+	} else if authToken != implicitAuthToken {
+		if authToken != "" {
+			client.SetToken(authToken)
+		} else if backendConfig.VaultToken != "" {
+			client.SetToken(backendConfig.VaultToken)
+		} else {
+			return nil, fmt.Errorf("no auth method or token provided")
+		}
 	}
 
 	return &VaultBackend{
