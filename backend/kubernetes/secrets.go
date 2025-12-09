@@ -153,6 +153,7 @@ func NewSecretsBackend(bc map[string]interface{}) (*SecretsBackend, error) {
 
 // GetSecretOutput retrieves a secret from Kubernetes Secrets
 func (b *SecretsBackend) GetSecretOutput(ctx context.Context, secretString string) secret.Output {
+	// https://kubernetes.io/docs/reference/kubernetes-api/config-and-storage-resources/secret-v1/#Secret
 	// parse: namespace/secret-name;key
 	// ex: secrets-store-1/my-secret;password
 
