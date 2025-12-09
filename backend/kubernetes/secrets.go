@@ -24,6 +24,15 @@ import (
 	"github.com/DataDog/datadog-secret-backend/secret"
 )
 
+const (
+	// Default paths for Kubernetes service account token and CA certificate
+	// https://kubernetes.io/docs/concepts/windows/intro/#api
+	defaultTokenPathLinux   = "/var/run/secrets/kubernetes.io/serviceaccount/token"
+	defaultTokenPathWindows = `C:\var\run\secrets\kubernetes.io\serviceaccount\token`
+	defaultCAPathLinux      = "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
+	defaultCAPathWindows    = `C:\var\run\secrets\kubernetes.io\serviceaccount\ca.crt`
+)
+
 // SecretsBackendConfig is the configuration for a Kubernetes Secrets backend
 type SecretsBackendConfig struct {
 	TokenPath string `mapstructure:"token_path"` // optional
@@ -81,21 +90,19 @@ func NewSecretsBackend(bc map[string]interface{}) (*SecretsBackend, error) {
 
 	tokenPath := backendConfig.TokenPath
 	if tokenPath == "" {
-		// https://kubernetes.io/docs/concepts/windows/intro/#api
 		if runtime.GOOS == "windows" {
-			tokenPath = `C:\var\run\secrets\kubernetes.io\serviceaccount\token`
+			tokenPath = defaultTokenPathWindows
 		} else {
-			tokenPath = "/var/run/secrets/kubernetes.io/serviceaccount/token"
+			tokenPath = defaultTokenPathLinux
 		}
 	}
 
 	caPath := backendConfig.CAPath
 	if caPath == "" {
-		// https://kubernetes.io/docs/concepts/windows/intro/#api
 		if runtime.GOOS == "windows" {
-			caPath = `C:\var\run\secrets\kubernetes.io\serviceaccount\ca.crt`
+			caPath = defaultCAPathWindows
 		} else {
-			caPath = "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
+			caPath = defaultCAPathLinux
 		}
 	}
 
