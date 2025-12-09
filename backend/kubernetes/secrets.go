@@ -114,7 +114,7 @@ func NewSecretsBackend(bc map[string]interface{}) (*SecretsBackend, error) {
 		host := os.Getenv("KUBERNETES_SERVICE_HOST")
 		port := os.Getenv("KUBERNETES_SERVICE_PORT")
 		if host == "" || port == "" {
-			return nil, fmt.Errorf("KUBERNETES_SERVICE_HOST or KUBERNETES_SERVICE_PORT not set")
+			return nil, fmt.Errorf("K8s port and/or host configuration missing")
 		}
 		apiServer = fmt.Sprintf("https://%s:%s", host, port)
 	}
