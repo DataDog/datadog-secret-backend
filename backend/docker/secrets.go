@@ -89,7 +89,7 @@ func (b *SecretsBackend) GetSecretOutput(_ context.Context, secretString string)
 
 	value := strings.TrimSpace(string(data))
 	if value == "" {
-		es := fmt.Sprintf("secret '%s' is empty", secretString)
+		es := secret.ErrKeyNotFound.Error()
 		return secret.Output{Value: nil, Error: &es}
 	}
 
