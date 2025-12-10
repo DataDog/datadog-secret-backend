@@ -39,7 +39,7 @@ func NewSecretsBackend(bc map[string]interface{}) (*SecretsBackend, error) {
 	}
 
 	// https://docs.docker.com/engine/swarm/secrets#how-docker-manages-secrets
-	// https: //docs.docker.com/compose/how-tos/use-secrets/#use-secrets
+	// https://docs.docker.com/compose/how-tos/use-secrets/#use-secrets
 	if backendConfig.SecretsPath == "" {
 		if runtime.GOOS == "windows" {
 			backendConfig.SecretsPath = `C:\ProgramData\Docker\secrets`
