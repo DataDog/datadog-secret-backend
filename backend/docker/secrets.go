@@ -66,8 +66,8 @@ func (b *SecretsBackend) GetSecretOutput(_ context.Context, secretString string)
 	if filepath.IsAbs(secretString) {
 		// target support https://docs.docker.com/engine/swarm/secrets/#intermediate-example-use-secrets-with-a-nginx-service:~:text=location%20using%20the-,target,-option.%20The%20example
 		path = secretString
-	} else if strings.Contains(secretString, "..") || strings.ContainsRune(secretString, filepath.Separator) {
-		es := "invalid secret name: must not contain '..' or separator"
+	} else if strings.Contains(secretString, "..") || strings.ContainsAny(secretString, `/\`) {
+		es := "invalid secret name: must not contain '..' or path separators"
 		return secret.Output{Value: nil, Error: &es}
 	} else {
 		path = filepath.Join(b.Config.SecretsPath, secretString)

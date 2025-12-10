@@ -82,6 +82,11 @@ func TestGetSecretOutput(t *testing.T) {
 			secret: "subdir/secret",
 			fail:   true,
 		},
+		{
+			name:   "backslash in relative name blocked (Windows)",
+			secret: `subdir\secret`,
+			fail:   true,
+		},
 	}
 
 	for _, tt := range tests {
