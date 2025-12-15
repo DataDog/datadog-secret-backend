@@ -13,8 +13,8 @@ import (
 	"github.com/DataDog/datadog-secret-backend/backend/file"
 )
 
-// NewSecretsBackend returns a new Docker Secrets backend
-func NewDockerSecretsBackend(bc map[string]interface{}) (*file.FileBackend, error) {
+// NewDockerSecretsBackend returns a new Docker Secrets backend
+func NewDockerSecretsBackend(bc map[string]interface{}) (*file.Backend, error) {
 	// https://docs.docker.com/engine/swarm/secrets#how-docker-manages-secrets
 	// https://docs.docker.com/compose/how-tos/use-secrets/#use-secrets
 	if _, exists := bc["secrets_path"]; !exists {
