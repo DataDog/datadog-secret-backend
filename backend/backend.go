@@ -52,7 +52,7 @@ func Get(backendType string, backendConfig map[string]interface{}) Backend {
 	case "k8s.file":
 		backend, err = kubernetes.NewK8sFileBackend(backendConfig)
 	case "k8s.secrets":
-		backend, err = kubernetes.NewSecretsBackend(backendConfig)
+		backend, err = kubernetes.NewK8sSecretsBackend(backendConfig)
 	case "akeyless":
 		backend, err = akeyless.NewAkeylessBackend(backendConfig)
 	case "docker.secrets":
