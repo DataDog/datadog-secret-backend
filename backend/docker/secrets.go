@@ -14,7 +14,7 @@ import (
 )
 
 // NewDockerSecretsBackend returns a new Docker Secrets backend
-func NewDockerSecretsBackend(bc map[string]interface{}) (*file.FileBackend, error) {
+func NewDockerSecretsBackend(bc map[string]interface{}) (*file.TextFileBackend, error) {
 	// https://docs.docker.com/engine/swarm/secrets#how-docker-manages-secrets
 	// https://docs.docker.com/compose/how-tos/use-secrets/#use-secrets
 	if _, exists := bc["secrets_path"]; !exists {
@@ -25,5 +25,5 @@ func NewDockerSecretsBackend(bc map[string]interface{}) (*file.FileBackend, erro
 		}
 	}
 
-	return file.NewFileBackend(bc)
+	return file.NewTextFileBackend(bc)
 }

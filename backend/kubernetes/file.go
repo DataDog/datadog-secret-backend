@@ -14,10 +14,10 @@ import (
 )
 
 // NewK8sFileBackend returns a new Kubernetes file-based secrets backend
-func NewK8sFileBackend(bc map[string]interface{}) (*file.FileBackend, error) {
+func NewK8sFileBackend(bc map[string]interface{}) (*file.TextFileBackend, error) {
 	if _, exists := bc["secrets_path"]; !exists {
 		return nil, fmt.Errorf("secrets_path is required for k8s.file backend")
 	}
 
-	return file.NewFileBackend(bc)
+	return file.NewTextFileBackend(bc)
 }

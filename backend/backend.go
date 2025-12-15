@@ -47,8 +47,8 @@ func Get(backendType string, backendConfig map[string]interface{}) Backend {
 		backend, err = file.NewYAMLBackend(backendConfig)
 	case "file.json":
 		backend, err = file.NewJSONBackend(backendConfig)
-	case "file.file":
-		backend, err = file.NewFileBackend(backendConfig)
+	case "file.text":
+		backend, err = file.NewTextFileBackend(backendConfig)
 	case "k8s.file":
 		backend, err = kubernetes.NewK8sFileBackend(backendConfig)
 	case "k8s.secrets":

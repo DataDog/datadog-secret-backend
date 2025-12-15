@@ -25,8 +25,8 @@ func TestFileBackendGetSecretOutput(t *testing.T) {
 	err = os.WriteFile(filepath.Join(tmpDir, "empty"), []byte(""), 0644)
 	assert.NoError(t, err)
 
-	backend := &FileBackend{
-		Config: FileBackendConfig{
+	backend := &TextFileBackend{
+		Config: TextFileBackendConfig{
 			SecretsPath: tmpDir,
 		},
 	}
@@ -136,7 +136,7 @@ func TestNewFileBackend(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			backend, err := NewFileBackend(tt.config)
+			backend, err := NewTextFileBackend(tt.config)
 
 			if tt.fail {
 				assert.Error(t, err)

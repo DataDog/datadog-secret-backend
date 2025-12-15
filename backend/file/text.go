@@ -20,18 +20,18 @@ import (
 )
 
 // FileBackendConfig is the configuration for a file backend
-type FileBackendConfig struct {
+type TextFileBackendConfig struct {
 	SecretsPath string `mapstructure:"secrets_path"`
 }
 
-// FileBackend represents backend for individual secret files
-type FileBackend struct {
-	Config FileBackendConfig
+// TextFileBackend represents backend for individual secret files
+type TextFileBackend struct {
+	Config TextFileBackendConfig
 }
 
-// NewFileBackend returns a new file backend
-func NewFileBackend(bc map[string]interface{}) (*FileBackend, error) {
-	backendConfig := FileBackendConfig{}
+// NewTextFileBackend returns a new file backend
+func NewTextFileBackend(bc map[string]interface{}) (*TextFileBackend, error) {
+	backendConfig := TextFileBackendConfig{}
 	err := mapstructure.Decode(bc, &backendConfig)
 	if err != nil {
 		return nil, fmt.Errorf("failed to map backend configuration: %s", err)
@@ -49,11 +49,11 @@ func NewFileBackend(bc map[string]interface{}) (*FileBackend, error) {
 		return nil, fmt.Errorf("secrets path '%s' is not a directory", backendConfig.SecretsPath)
 	}
 
-	return &FileBackend{Config: backendConfig}, nil
+	return &TextFileBackend{Config: backendConfig}, nil
 }
 
 // GetSecretOutput retrieves a secret from a file
-func (b *FileBackend) GetSecretOutput(_ context.Context, secretString string) secret.Output {
+func (b *TextFileBackend) GetSecretOutput(_ context.Context, secretString string) secret.Output {
 	var path string
 
 	if filepath.IsAbs(secretString) {
