@@ -18,6 +18,7 @@ import (
 	"github.com/DataDog/datadog-secret-backend/backend/file"
 	"github.com/DataDog/datadog-secret-backend/backend/gcp"
 	"github.com/DataDog/datadog-secret-backend/backend/hashicorp"
+	"github.com/DataDog/datadog-secret-backend/backend/kubernetes"
 	"github.com/DataDog/datadog-secret-backend/secret"
 )
 
@@ -48,6 +49,8 @@ func Get(backendType string, backendConfig map[string]interface{}) Backend {
 		backend, err = file.NewJSONBackend(backendConfig)
 	case "file.file":
 		backend, err = file.NewFileBackend(backendConfig)
+	case "k8s.file":
+		backend, err = kubernetes.NewK8sFileBackend(backendConfig)
 	case "akeyless":
 		backend, err = akeyless.NewAkeylessBackend(backendConfig)
 	case "docker.secrets":
