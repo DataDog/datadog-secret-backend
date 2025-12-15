@@ -46,10 +46,12 @@ func Get(backendType string, backendConfig map[string]interface{}) Backend {
 		backend, err = file.NewYAMLBackend(backendConfig)
 	case "file.json":
 		backend, err = file.NewJSONBackend(backendConfig)
+	case "file.file":
+		backend, err = file.NewFileBackend(backendConfig)
 	case "akeyless":
 		backend, err = akeyless.NewAkeylessBackend(backendConfig)
 	case "docker.secrets":
-		backend, err = docker.NewSecretsBackend(backendConfig)
+		backend, err = docker.NewDockerSecretsBackend(backendConfig)
 	default:
 		err = fmt.Errorf("unsupported backend type: %s", backendType)
 	}
