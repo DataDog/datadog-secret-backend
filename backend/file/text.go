@@ -19,7 +19,7 @@ import (
 	"github.com/DataDog/datadog-secret-backend/secret"
 )
 
-// FileBackendConfig is the configuration for a file backend
+// TextFileBackendConfig is the configuration for a file backend
 type TextFileBackendConfig struct {
 	SecretsPath string `mapstructure:"secrets_path"`
 }
