@@ -12,12 +12,12 @@ replace (
 require (
 	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.13.1
 	github.com/Azure/azure-sdk-for-go/sdk/security/keyvault/azsecrets v1.4.0
-	github.com/aws/aws-sdk-go-v2 v1.40.1
-	github.com/aws/aws-sdk-go-v2/config v1.32.3
-	github.com/aws/aws-sdk-go-v2/credentials v1.19.3
-	github.com/aws/aws-sdk-go-v2/service/secretsmanager v1.40.3
-	github.com/aws/aws-sdk-go-v2/service/ssm v1.67.4
-	github.com/aws/aws-sdk-go-v2/service/sts v1.41.3
+	github.com/aws/aws-sdk-go-v2 v1.41.0
+	github.com/aws/aws-sdk-go-v2/config v1.32.5
+	github.com/aws/aws-sdk-go-v2/credentials v1.19.5
+	github.com/aws/aws-sdk-go-v2/service/secretsmanager v1.41.0
+	github.com/aws/aws-sdk-go-v2/service/ssm v1.67.7
+	github.com/aws/aws-sdk-go-v2/service/sts v1.41.5
 	github.com/frapposelli/wwhrd v0.4.0
 	github.com/go-enry/go-license-detector/v4 v4.3.1
 	github.com/goware/modvendor v0.5.0
@@ -83,7 +83,7 @@ require (
 	github.com/distribution/reference v0.6.0 // indirect
 	github.com/dnaeon/go-vcr v1.2.0 // indirect
 	github.com/docker/docker v28.4.0+incompatible // indirect
-	github.com/docker/go-connections v0.5.0 // indirect
+	github.com/docker/go-connections v0.6.0 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/duosecurity/duo_api_golang v0.0.0-20190308151101-6c680f768e74 // indirect
 	github.com/emicklei/go-restful/v3 v3.12.2 // indirect
@@ -263,7 +263,7 @@ require (
 	go.uber.org/atomic v1.11.0 // indirect
 	golang.org/x/exp v0.0.0-20251023183803-a4bb9ffd2546 // indirect
 	golang.org/x/mod v0.29.0 // indirect
-	golang.org/x/oauth2 v0.33.0
+	golang.org/x/oauth2 v0.34.0
 	golang.org/x/sync v0.18.0 // indirect
 	golang.org/x/term v0.37.0 // indirect
 	golang.org/x/tools v0.38.0 // indirect
@@ -291,10 +291,10 @@ require (
 
 require (
 	github.com/Azure/azure-sdk-for-go v68.0.0+incompatible // indirect
-	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.18.15 // indirect
+	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.18.16 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/ini v1.8.4 // indirect
-	github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.13.15 // indirect
-	github.com/aws/aws-sdk-go-v2/service/sso v1.30.6 // indirect
+	github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.13.16 // indirect
+	github.com/aws/aws-sdk-go-v2/service/sso v1.30.7 // indirect
 	github.com/aws/smithy-go v1.24.0 // indirect
 	github.com/jmespath/go-jmespath v0.4.1-0.20220621161143-b0104c826a24 // indirect
 	golang.org/x/sys v0.38.0 // indirect
@@ -313,11 +313,11 @@ require (
 	github.com/Azure/go-autorest/logger v0.2.1 // indirect
 	github.com/Azure/go-autorest/tracing v0.6.0 // indirect
 	github.com/ProtonMail/gopenpgp/v3 v3.2.1 // indirect
-	github.com/aws/aws-sdk-go-v2/internal/configsources v1.4.15 // indirect
-	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.7.15 // indirect
+	github.com/aws/aws-sdk-go-v2/internal/configsources v1.4.16 // indirect
+	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.7.16 // indirect
 	github.com/aws/aws-sdk-go-v2/service/internal/accept-encoding v1.13.4 // indirect
-	github.com/aws/aws-sdk-go-v2/service/signin v1.0.3 // indirect
-	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.35.11 // indirect
+	github.com/aws/aws-sdk-go-v2/service/signin v1.0.4 // indirect
+	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.35.12 // indirect
 	github.com/containerd/errdefs v1.0.0 // indirect
 	github.com/containerd/errdefs/pkg v0.3.0 // indirect
 	github.com/cyphar/filepath-securejoin v0.4.1 // indirect
