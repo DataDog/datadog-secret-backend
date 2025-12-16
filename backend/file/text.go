@@ -21,8 +21,13 @@ import (
 
 // TextFileBackendConfig is the configuration for a file backend
 type TextFileBackendConfig struct {
-	SecretsPath string `mapstructure:"secrets_path"`
+	SecretsPath     string `mapstructure:"secrets_path"`
+	MaxFileReadSize int64  `mapstructure:"max_file_read_size"`
 }
+
+const (
+	DefaultMaxFileReadSize = 10 * 1024 * 1024 // 10 MB
+)
 
 // TextFileBackend represents backend for individual secret files
 type TextFileBackend struct {
@@ -49,6 +54,10 @@ func NewTextFileBackend(bc map[string]interface{}) (*TextFileBackend, error) {
 		return nil, fmt.Errorf("secrets path '%s' is not a directory", backendConfig.SecretsPath)
 	}
 
+	if backendConfig.MaxFileReadSize <= 0 {
+		backendConfig.MaxFileReadSize = DefaultMaxFileReadSize
+	}
+
 	return &TextFileBackend{Config: backendConfig}, nil
 }
 
@@ -63,6 +72,17 @@ func (b *TextFileBackend) GetSecretOutput(_ context.Context, secretString string
 		return secret.Output{Value: nil, Error: &es}
 	} else {
 		path = filepath.Join(b.Config.SecretsPath, secretString)
+	}
+
+	info, err := os.Stat(path)
+	if err != nil {
+		es := fmt.Sprintf("failed to stat secret file '%s': %s", secretString, err.Error())
+		return secret.Output{Value: nil, Error: &es}
+	}
+
+	if info.Size() > b.Config.MaxFileReadSize {
+		es := fmt.Sprintf("secret file '%s' exceeds maximum size limit of %d bytes (actual: %d bytes)", secretString, b.Config.MaxFileReadSize, info.Size())
+		return secret.Output{Value: nil, Error: &es}
 	}
 
 	data, err := os.ReadFile(path)
