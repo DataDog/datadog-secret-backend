@@ -14,8 +14,10 @@ import (
 )
 
 const (
+	// DefaultWindowsDockerSecretsPath is the default location for Docker secrets on Windows
 	DefaultWindowsDockerSecretsPath = `C:\ProgramData\Docker\secrets`
-	DefaultUnixDockerSecretsPath    = "/run/secrets"
+	// DefaultUnixDockerSecretsPath is the default location for Docker secrets on Linux/Unix
+	DefaultUnixDockerSecretsPath = "/run/secrets"
 )
 
 // NewDockerSecretsBackend returns a new Docker Secrets backend
