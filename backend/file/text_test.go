@@ -27,7 +27,8 @@ func TestFileBackendGetSecretOutput(t *testing.T) {
 
 	backend := &TextFileBackend{
 		Config: TextFileBackendConfig{
-			SecretsPath: tmpDir,
+			SecretsPath:     tmpDir,
+			MaxFileReadSize: DefaultMaxFileReadSize,
 		},
 	}
 
@@ -147,4 +148,88 @@ func TestNewFileBackend(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestFileBackendMaxFileSize(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	smallFile := filepath.Join(tmpDir, "small_secret")
+	err := os.WriteFile(smallFile, make([]byte, 100), 0644) // 100 bytes
+	assert.NoError(t, err)
+
+	largeFile := filepath.Join(tmpDir, "large_secret")
+	err = os.WriteFile(largeFile, make([]byte, 15*1024*1024), 0644) // 15 MB
+	assert.NoError(t, err)
+
+	ctx := context.Background()
+
+	t.Run("default max file size allows small files", func(t *testing.T) {
+		backend, err := NewTextFileBackend(map[string]interface{}{
+			"secrets_path": tmpDir,
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, int64(DefaultMaxFileReadSize), backend.Config.MaxFileReadSize)
+
+		output := backend.GetSecretOutput(ctx, "small_secret")
+		assert.NotNil(t, output.Value)
+		assert.Nil(t, output.Error)
+	})
+
+	t.Run("default max file size rejects large files", func(t *testing.T) {
+		backend, err := NewTextFileBackend(map[string]interface{}{
+			"secrets_path": tmpDir,
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, int64(DefaultMaxFileReadSize), backend.Config.MaxFileReadSize)
+
+		output := backend.GetSecretOutput(ctx, "large_secret")
+		assert.Nil(t, output.Value)
+		assert.NotNil(t, output.Error)
+		assert.Contains(t, *output.Error, "exceeds maximum size limit")
+	})
+
+	t.Run("custom max file size rejects files exceeding limit", func(t *testing.T) {
+		backend, err := NewTextFileBackend(map[string]interface{}{
+			"secrets_path":       tmpDir,
+			"max_file_read_size": 12 * 1024 * 1024, // 12 MB
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, int64(12*1024*1024), backend.Config.MaxFileReadSize)
+
+		output := backend.GetSecretOutput(ctx, "large_secret")
+		assert.Nil(t, output.Value)
+		assert.NotNil(t, output.Error)
+		assert.Contains(t, *output.Error, "exceeds maximum size limit")
+	})
+
+	t.Run("custom max file size allows files within limit", func(t *testing.T) {
+		backend, err := NewTextFileBackend(map[string]interface{}{
+			"secrets_path":       tmpDir,
+			"max_file_read_size": 12 * 1024 * 1024, // 12 MB
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, int64(12*1024*1024), backend.Config.MaxFileReadSize)
+
+		output := backend.GetSecretOutput(ctx, "small_secret")
+		assert.NotNil(t, output.Value)
+		assert.Nil(t, output.Error)
+	})
+
+	t.Run("zero max file size uses default", func(t *testing.T) {
+		backend, err := NewTextFileBackend(map[string]interface{}{
+			"secrets_path":       tmpDir,
+			"max_file_read_size": 0,
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, int64(DefaultMaxFileReadSize), backend.Config.MaxFileReadSize)
+	})
+
+	t.Run("negative max file size uses default", func(t *testing.T) {
+		backend, err := NewTextFileBackend(map[string]interface{}{
+			"secrets_path":       tmpDir,
+			"max_file_read_size": -1,
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, int64(DefaultMaxFileReadSize), backend.Config.MaxFileReadSize)
+	})
 }
