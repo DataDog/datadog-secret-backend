@@ -26,7 +26,8 @@ type TextFileBackendConfig struct {
 }
 
 const (
-	DefaultMaxFileReadSize = 10 * 1024 * 1024 // 10 MB
+	// DefaultMaxFileReadSize is the maximum file size (10 MB) that can be read as a secret
+	DefaultMaxFileReadSize = 10 * 1024 * 1024
 )
 
 // TextFileBackend represents backend for individual secret files
