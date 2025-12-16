@@ -79,7 +79,7 @@ func (b *TextFileBackend) GetSecretOutput(_ context.Context, secretString string
 		return secret.Output{Value: nil, Error: &es}
 	}
 
-	value := strings.TrimSpace(string(data))
+	value := string(data)
 	if value == "" {
 		es := secret.ErrKeyNotFound.Error()
 		return secret.Output{Value: nil, Error: &es}
