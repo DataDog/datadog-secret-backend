@@ -63,18 +63,19 @@ func NewTextFileBackend(bc map[string]interface{}) (*TextFileBackend, error) {
 
 // GetSecretOutput retrieves a secret from a file
 func (b *TextFileBackend) GetSecretOutput(_ context.Context, secretString string) secret.Output {
-	var path string
+	base := filepath.Clean(b.Config.SecretsPath)
+	path := secretString
+	if !filepath.IsAbs(path) {
+		path = filepath.Join(base, path)
+	}
+	cleanPath := filepath.Clean(path)
 
-	if filepath.IsAbs(secretString) {
-		path = secretString
-	} else if strings.Contains(secretString, "..") || strings.ContainsAny(secretString, `/\`) {
-		es := "invalid secret name: must not contain '..' or path separators"
+	if !strings.HasPrefix(cleanPath, base+string(filepath.Separator)) && cleanPath != base {
+		es := "path outside allowed directory"
 		return secret.Output{Value: nil, Error: &es}
-	} else {
-		path = filepath.Join(b.Config.SecretsPath, secretString)
 	}
 
-	info, err := os.Stat(path)
+	info, err := os.Stat(cleanPath)
 	if err != nil {
 		es := fmt.Sprintf("failed to stat secret file '%s': %s", secretString, err.Error())
 		return secret.Output{Value: nil, Error: &es}
