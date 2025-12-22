@@ -63,5 +63,5 @@ func TestYAMLBackendMaxFileSize(t *testing.T) {
 
 	_, err = NewYAMLBackend(map[string]interface{}{"file_path": largeFile})
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "exceeds default maximum size limit")
+	assert.Contains(t, err.Error(), "exceeds maximum size limit")
 }
