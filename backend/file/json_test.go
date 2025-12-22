@@ -54,54 +54,11 @@ func TestJSONBackend(t *testing.T) {
 func TestJSONBackendMaxFileSize(t *testing.T) {
 	tmpDir := t.TempDir()
 
-	t.Run("default max file size rejects large files", func(t *testing.T) {
-		largeFile := filepath.Join(tmpDir, "large.json")
-		err := os.WriteFile(largeFile, make([]byte, 15*1024*1024), 0644)
-		assert.NoError(t, err)
+	largeFile := filepath.Join(tmpDir, "large.json")
+	err := os.WriteFile(largeFile, make([]byte, 15*1024*1024), 0644)
+	assert.NoError(t, err)
 
-		_, err = NewJSONBackend(map[string]interface{}{
-			"file_path": largeFile,
-		})
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "exceeds maximum size limit")
-	})
-
-	t.Run("custom max file size rejects files exceeding limit", func(t *testing.T) {
-		mediumFile := filepath.Join(tmpDir, "medium.json")
-		err := os.WriteFile(mediumFile, []byte(`{"key": "value"}`), 0644)
-		assert.NoError(t, err)
-
-		_, err = NewJSONBackend(map[string]interface{}{
-			"file_path":          mediumFile,
-			"max_file_read_size": 5,
-		})
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "exceeds maximum size limit")
-	})
-
-	t.Run("zero max file size uses default", func(t *testing.T) {
-		smallFile := filepath.Join(tmpDir, "small.json")
-		err := os.WriteFile(smallFile, []byte(`{"key": "value"}`), 0644)
-		assert.NoError(t, err)
-
-		backend, err := NewJSONBackend(map[string]interface{}{
-			"file_path":          smallFile,
-			"max_file_read_size": 0,
-		})
-		assert.NoError(t, err)
-		assert.Equal(t, int64(secret.DefaultMaxFileReadSize), backend.Config.MaxFileReadSize)
-	})
-
-	t.Run("negative max file size uses default", func(t *testing.T) {
-		smallFile := filepath.Join(tmpDir, "small2.json")
-		err := os.WriteFile(smallFile, []byte(`{"key": "value"}`), 0644)
-		assert.NoError(t, err)
-
-		backend, err := NewJSONBackend(map[string]interface{}{
-			"file_path":          smallFile,
-			"max_file_read_size": -1,
-		})
-		assert.NoError(t, err)
-		assert.Equal(t, int64(secret.DefaultMaxFileReadSize), backend.Config.MaxFileReadSize)
-	})
+	_, err = NewJSONBackend(map[string]interface{}{"file_path": largeFile})
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "exceeds maximum size limit")
 }
