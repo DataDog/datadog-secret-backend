@@ -41,7 +41,7 @@ func NewYAMLBackend(bc map[string]interface{}) (
 	}
 
 	if backendConfig.MaxFileReadSize <= 0 {
-		backendConfig.MaxFileReadSize = DefaultMaxFileReadSize
+		backendConfig.MaxFileReadSize = secret.DefaultMaxFileReadSize
 	}
 
 	if info, err := os.Stat(backendConfig.FilePath); err == nil && info.Size() > backendConfig.MaxFileReadSize {
