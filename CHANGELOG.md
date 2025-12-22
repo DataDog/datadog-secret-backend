@@ -1,5 +1,13 @@
 # CHANGELOG - datadog-secret-backend
 
+## 1.5.0 / 2025-12-22
+
+* Added support for Kubernetes API-based secrets with the `k8.secrets` backend
+* Added support for Kubernetes file based secrets with the `k8.file` backend
+* Added support for Docker file based secrets with the `docker.secrets` backend
+* Added support for plain text file based secrets with the `file.text` backend
+* Added a configurable `max_file_read_size` config option to `file.yaml`, `file.json`, & `file.text` to prevent OOM reads
+
 ## 1.4.2 / 2025-12-18
 
 * bump Go version to 1.25.5
