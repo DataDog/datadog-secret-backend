@@ -7,6 +7,7 @@
 * Added support for Docker file based secrets with the `docker.secrets` backend
 * Added support for plain text file based secrets with the `file.text` backend
 * Added a configurable `max_file_read_size` config option to `file.yaml`, `file.json`, & `file.text` to prevent OOM reads
+* SGC now allows implicit Vault authentication to be set as a config option or an env var
 
 ## 1.4.2 / 2025-12-18
 
