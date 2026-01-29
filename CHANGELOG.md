@@ -1,5 +1,11 @@
 # CHANGELOG - datadog-secret-backend
 
+## 1.5.1 / 2026-01-29
+
+* Bump github.com/aws/aws-sdk-go-v2/service/ssm from 1.67.7 to 1.67.8
+* Bump github.com/Azure/azure-sdk-for-go/sdk/azcore from 1.20.0 to 1.21.0
+* Fixes golang.org/x/crypto CVE-2025-58181 by indirectly bumping to v0.47.0
+
 ## 1.5.0 / 2025-12-22
 
 * Added support for Kubernetes API-based secrets with the `k8.secrets` backend
