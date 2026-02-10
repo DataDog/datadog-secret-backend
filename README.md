@@ -4,7 +4,7 @@
 >
 > The `datadog-secret-backend` project has been migrated into the [Datadog Agent monorepo](https://github.com/DataDog/datadog-agent) as `secret-generic-connector`.
 >
-> - **Agent 7.70+**: The secret backend binary was first bundled inside the Agent. No separate installation needed -- configure using `secret_backend_type` and `secret_backend_config` in your `datadog.yaml`.
+> - **Agent 7.70+**: The secret backend binary was first bundled inside the Agent. Separate installation of `datadog-secret-backend` is no longer needed -- configure using `secret_backend_type` and `secret_backend_config` in your `datadog.yaml`.
 > - **Agent 7.77.0+**: The source code now lives in the Agent repo and includes FIPS compliance support.
 > - See the [Datadog Agent Secrets Management documentation](https://docs.datadoghq.com/agent/guide/secrets-management/)
 >
