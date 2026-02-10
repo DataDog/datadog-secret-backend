@@ -8,7 +8,7 @@
 > - **Agent 7.77.0+**: The source code now lives in the Agent repo and includes FIPS compliance support.
 > - See the [Datadog Agent Secrets Management documentation](https://docs.datadoghq.com/agent/guide/secrets-management/)
 >
-> **For existing users:** Existing installations of this standalone binary will continue to work. We recommend upgrading to Agent 7.77.0+ and migrating to the latest version.
+> **For existing users:** Existing installations of this standalone binary will continue to work with newer Agent. But we strongly recommend upgrading to Agent 7.77.0+ and migrating to `secret_backend_type` configuration to benefit from the latest improvements (new features and CVE fix from the cloud providers SDK used by this project).
 >
 > **For contributors and developers:**
 > - Source code: [`cmd/secret-generic-connector`](https://github.com/DataDog/datadog-agent/tree/main/cmd/secret-generic-connector)
