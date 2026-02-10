@@ -1,12 +1,29 @@
 # datadog-secret-backend
 
+> [!IMPORTANT]
+> **This repository has been archived and is now read-only.**
+>
+> The `datadog-secret-backend` project has been migrated into the [Datadog Agent monorepo](https://github.com/DataDog/datadog-agent) as `secret-generic-connector`.
+>
+> - **Agent 7.70+**: The secret backend binary was first bundled inside the Agent. No separate installation needed -- configure using `secret_backend_type` and `secret_backend_config` in your `datadog.yaml`.
+> - **Agent 7.77.0+**: The source code now lives in the Agent repo and includes FIPS compliance support.
+> - See the [Datadog Agent Secrets Management documentation](https://docs.datadoghq.com/agent/guide/secrets-management/)
+>
+> **For existing users:** Existing installations of this standalone binary will continue to work. We recommend upgrading to Agent 7.77.0+ and migrating to the latest version.
+>
+> **For contributors and developers:**
+> - Source code: [`cmd/secret-generic-connector`](https://github.com/DataDog/datadog-agent/tree/main/cmd/secret-generic-connector)
+> - Issues: [Datadog Agent Issues](https://github.com/DataDog/datadog-agent/issues)
+
+---
+
 [![.github/workflows/release.yaml](https://github.com/DataDog/datadog-secret-backend/actions/workflows/release.yaml/badge.svg)](https://github.com/DataDog/datadog-secret-backend/actions/workflows/release.yaml)
 
 > **datadog-secret-backend** is an implementation of the [Datadog Agent Secrets Management](https://docs.datadoghq.com/agent/guide/secrets-management/?tab=linux) executable supporting multiple backend secret providers.
 
-**This project is not FIPS compliant.**
+**This standalone project is not FIPS compliant.** For FIPS compliance, upgrade to Agent 7.77.0+ which includes the bundled `secret-generic-connector` with FIPS support.
 
-**IMPORTANT NOTE**: If you're using an Agent version 7.70 or newer, setup is significantly simplified as the datadog-secret-backend binary is now bundled inside the Agent itself. In that case, you don’t need to install or manage the binary separately--please use the [secret_backend_type](https://github.com/DataDog/datadog-agent/blob/main/pkg/config/config_template.yaml#L867) and [secret_backend_config](https://github.com/DataDog/datadog-agent/blob/main/pkg/config/config_template.yaml#L880) config options in your datadog.yaml file instead. **This method of setup is not compatible with FIPS either.**
+**IMPORTANT NOTE**: If you're using an Agent version 7.70 or newer, setup is significantly simplified as the datadog-secret-backend binary is now bundled inside the Agent itself. In that case, you don’t need to install or manage the binary separately--please use the [secret_backend_type](https://github.com/DataDog/datadog-agent/blob/main/pkg/config/config_template.yaml#L867) and [secret_backend_config](https://github.com/DataDog/datadog-agent/blob/main/pkg/config/config_template.yaml#L880) config options in your datadog.yaml file instead. Agent 7.77.0+ additionally includes FIPS compliance support.
 
 ## Quick Start (Agent Version < 7.70)
 
