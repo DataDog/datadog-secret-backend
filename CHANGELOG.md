@@ -2,10 +2,11 @@
 
 ## 1.5.2 / 2026-02-03
 
+* Bump go to v1.25.7
 * Bump github.com/aws/aws-sdk-go-v2/credentials from 1.19.6 to 1.19.7
 * Bump github.com/aws/aws-sdk-go-v2/config from 1.32.6 to 1.32.7
 * Bump github.com/aws/aws-sdk-go-v2/service/secretsmanager
-* Bump go to v1.25.6
+* Bump golang.org/x/oauth2 from 0.34.0 to 0.35.0
 
 ## 1.5.1 / 2026-01-29
 
