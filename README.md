@@ -1,5 +1,6 @@
 # datadog-secret-backend
 
+> [!IMPORTANT]
 > **This repository has been archived and is now read-only.**
 >
 > The `datadog-secret-backend` project has been migrated into the [Datadog Agent monorepo](https://github.com/DataDog/datadog-agent) as `secret-generic-connector`.
