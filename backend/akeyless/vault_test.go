@@ -13,7 +13,7 @@ import (
 	"testing"
 
 	"github.com/DataDog/datadog-secret-backend/secret"
-	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/assert"
 )
 
