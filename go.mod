@@ -19,7 +19,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/ssm v1.49.4
 	github.com/aws/aws-sdk-go-v2/service/sts v1.33.20
 	github.com/frapposelli/wwhrd v0.4.0
-	github.com/go-chi/chi v1.5.5
+	github.com/go-chi/chi/v5 v5.2.5
 	github.com/go-enry/go-license-detector/v4 v4.3.1
 	github.com/goware/modvendor v0.5.0
 	github.com/hashicorp/vault v1.21.0
