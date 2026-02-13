@@ -24,7 +24,7 @@ require (
 	github.com/goware/modvendor v0.5.0
 	github.com/hashicorp/vault v1.21.0
 	github.com/hashicorp/vault/api v1.22.0
-	github.com/hashicorp/vault/api/auth/approle v0.6.0
+	github.com/hashicorp/vault/api/auth/approle v0.11.0
 	github.com/hashicorp/vault/api/auth/ldap v0.6.0
 	github.com/hashicorp/vault/api/auth/userpass v0.6.0
 	github.com/mitchellh/mapstructure v1.5.1-0.20231216201459-8508981c8b6c
